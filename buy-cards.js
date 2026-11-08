@@ -3,12 +3,12 @@
   const stores = [
     ["The Dragon's Beard","https://thedragonsbeard.com.au","shop"],
     ["Spellroo Gaming","https://spellroogaming.com.au","shop"],
-    ["MTG Singles price tracker","https://www.mtgsingles.co.nz/au"],
+    ["MTG Singles price tracker","https://www.mtgsingles.co.nz/au","tracker"],
     ["Mana Market","https://manamarket.com.au","shop"],
     ["Moon MTG","https://moonmtg.com","shop"],
     ["MTG Mate","https://www.mtgmate.com.au","mate"],
-    ["Trade Magic","https://trademagic.com.au"],
-    ["The Games Cube","https://www.thegamescube.com"],
+    ["Trade Magic","https://trademagic.com.au","trade"],
+    ["The Games Cube","https://www.thegamescube.com","cube"],
     ["MTG Singles Australia","https://www.mtgsinglesaustralia.com","shop"],
     ["Plenty of Games","https://plentyofgames.com.au","shop"],
     ["Eternal Magic","https://eternalmagic.cc","shop"],
@@ -58,18 +58,17 @@
   }
 
   function storeUrl(root,type,card) {
-    if (!card) return root;
     if (type==="shop") return root+"/search?"+new URLSearchParams({q:card,type:"product",country:"AU"});
-    if (type==="mate") return root+"/cards/"+encodeURIComponent(card.replaceAll(" ","_"));
+    if (type==="mate") return root+"/cards/search?"+new URLSearchParams({q:card});
+    if (type==="tracker") return root+"/magic-the-gathering/"+encodeURIComponent(card);
+    if (type==="trade") return root+"/card.php?"+new URLSearchParams({cardname:card});
+    if (type==="cube") return root+"/products/search?"+new URLSearchParams({q:card});
     if (type==="ebay") return root+"/sch/i.html?"+new URLSearchParams({_nkw:card+" MTG",LH_BIN:"1",_sop:"15"});
-    return root;
   }
 
-  function storeLinks(card,sources=[]) {
-    return '<details class="shop-sources"><summary>Stores and coverage</summary><ul class="shop-list">'+stores.map(([name,root,type])=>{
-      const status=sources.find(source=>source.store===name)?.status;
-      return '<li>'+link(storeUrl(root,type,card),name)+' <small class="muted">'+escape(status || "Store link")+'</small></li>';
-    }).join("")+'</ul></details>';
+  function storeLinks(card) {
+    return '<ul class="shop-list" aria-label="Store searches">'+stores.map(([name,root,type])=>
+      '<li>'+link(storeUrl(root,type,card),name+' ↗')+'</li>').join("")+'</ul>';
   }
 
   function offerList(offers) {
@@ -110,7 +109,7 @@
 
   function renderBuy(app) {
     app.innerHTML='<section class="panel shop-panel"><p class="eyebrow">Australian singles</p><div class="shop-switch" role="group" aria-label="Buy Cards view">'+
-      '<button type="button" class="button" id="shop-search" aria-pressed="'+(mode==="search")+'">Find listings</button>'+
+      '<button type="button" class="button" id="shop-search" aria-pressed="'+(mode==="search")+'">Search stores</button>'+
       '<button type="button" class="button" id="shop-watch" aria-pressed="'+(mode==="watch")+'">Watchlist</button></div>'+
       '<div id="shop-content"></div><details class="shop-settings"><summary>Live scanner settings</summary>'+
       '<form id="shop-config"><label>Scanner HTTPS URL<input type="url" name="url" placeholder="https://your-scanner.workers.dev" value="'+escape(settings.url)+'"></label>'+
@@ -165,24 +164,21 @@
     content.innerHTML='<form id="card-shopping-search"><label for="shopping-card">Search for a card</label><div class="shop-search-row">'+
       '<input id="shopping-card" maxlength="120" value="'+escape(query)+'" autocomplete="off" placeholder="e.g. ocelot pr" aria-describedby="shop-hint">'+
       '<button type="submit" class="button primary">Search</button></div><div id="shop-suggestions"></div>'+
-      '<p class="small muted" id="shop-hint">Choose a suggested card or search the full name. Prices are in AUD before shipping.</p></form>'+
-      '<div id="shop-results">'+storeLinks("")+'</div>';
+      '<p class="small muted" id="shop-hint">Choose a suggested card or enter its name, then open a store’s results in a new tab.</p></form>'+
+      '<div id="shop-results"></div>';
     const form=content.querySelector("form");
     const input=content.querySelector("input");
     const suggest=content.querySelector("#shop-suggestions");
     const results=content.querySelector("#shop-results");
     let debounce,controller;
-    let revision=0;
-    const select=async card=>{
+    const select=card=>{
       if (keyFor(card).length<2) return;
       clearTimeout(debounce);
       controller?.abort();
       suggest.innerHTML="";
       input.value=query=card;
-      const current=++revision;
       results.innerHTML='<div class="shop-result-heading"><h3>'+escape(card)+'</h3><button type="button" class="button">Watch card</button></div>'+
-        '<p class="small" id="shop-watch-status" role="status"></p><div id="shop-prices" role="status"></div>'+storeLinks(card);
-      const prices=results.querySelector("#shop-prices");
+        '<p class="small" id="shop-watch-status" role="status"></p>'+storeLinks(card);
       const status=results.querySelector("#shop-watch-status");
       const watchButton=results.querySelector("button");
       const isWatched=()=>(connected()?watches.map(item=>item.card):localWatches).some(name=>keyFor(name)===keyFor(card));
@@ -195,24 +191,11 @@
         catch (error) { status.textContent=error.message; }
         finally { watchButton.disabled=false; }
       };
-      if (!connected()) {
-        prices.textContent="Connect the live scanner for price comparisons. You can browse stores below.";
-        results.querySelector("details").open=true;
-        return;
-      }
-      prices.textContent="Checking seller stock and prices…";
-      api("/api/watch",{},true).then(data=>{if (current===revision) {watches=data.watches; updateLabel();}}).catch(()=>{});
-      try {
-        const data=await api("/api/offers?"+new URLSearchParams({card}),{},true);
-        if (current!==revision) return;
-        prices.innerHTML=data.offers.length ? offerList(data.offers) : "<p>No in-stock AUD listings were verified. Check store coverage below.</p>";
-        results.querySelector("details").outerHTML=storeLinks(card,data.sources);
-        results.querySelector("details").open=!data.offers.length;
-      } catch (error) {
-        if (current!==revision) return;
-        prices.textContent=error.message;
-        results.querySelector("details").open=true;
-      }
+      if (connected()) api("/api/watch",{},true).then(data=>{
+        if (!watchButton.isConnected || watchButton.disabled) return;
+        watches=data.watches;
+        updateLabel();
+      }).catch(()=>{});
     };
     input.oninput=()=>{
       query=input.value;
@@ -257,7 +240,8 @@
       '<button class="button" type="button" data-watch-remove="'+index+'">Remove</button></div>'+
       (item.checkedAt?'<p class="small muted">Last checked '+escape(time.format(new Date(item.checkedAt)))+' Brisbane time</p>':'')+
       (item.newOffers.length?offerList(item.newOffers):'<p class="small muted">'+(item.checkedAt?"No new listings from checked stores on the latest scan.":"Waiting for a nightly scan.")+'</p>')+
-      storeLinks(item.card,item.sources)+'</article>').join("") || '<p class="muted">Search for a card and choose Watch card to add it here.</p>';
+      '<details class="shop-sources"><summary>Search stores for '+escape(item.card)+'</summary>'+storeLinks(item.card)+'</details></article>').join("") ||
+      '<p class="muted">Search for a card and choose Watch card to add it here.</p>';
     if (connected() && localWatches.length) {
       const sync=document.createElement("button");
       sync.type="button";
