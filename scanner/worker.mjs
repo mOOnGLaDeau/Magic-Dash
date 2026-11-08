@@ -20,11 +20,11 @@ export function watchResult(scan,previous) {
   return {checkedAt:scan.checkedAt,known,newOffers:fresh.sort((a,b)=>a.price-b.price),sources:scan.sources};
 }
 
-function authorized(request,env) {
+function authorized(request,key) {
   const token=request.headers.get("Authorization")?.match(/^Bearer (.+)$/)?.[1];
-  if (!token || !env.WATCH_KEY || env.WATCH_KEY.length<24 || token.length!==env.WATCH_KEY.length) return false;
+  if (!token || token.length!==key.length) return false;
   let different=0;
-  for (let i=0;i<token.length;i++) different|=token.charCodeAt(i)^env.WATCH_KEY.charCodeAt(i);
+  for (let i=0;i<token.length;i++) different|=token.charCodeAt(i)^key.charCodeAt(i);
   return different===0;
 }
 
@@ -57,13 +57,15 @@ export default {
     const data=env.DASH_DATA;
     try {
       if (request.method==="GET" && url.pathname==="/api/feed") return json(await data.get("feed","json") || {});
-      if (request.method==="GET" && url.pathname==="/api/offers") {
-        if (!authorized(request,env)) return json({error:"Enter the private scanner key to check live prices."},401);
+      const offersRequest=request.method==="GET" && url.pathname==="/api/offers";
+      if (!offersRequest && url.pathname!=="/api/watch") return json({error:"Unknown route"},404);
+      const key=typeof env.WATCH_KEY==="string" ? env.WATCH_KEY.trim() : "";
+      if (key.length<24) return json({error:"The deployed scanner needs a WATCH_KEY secret of at least 24 characters."},503);
+      if (!authorized(request,key)) return json({error:"The entered key does not match the deployed scanner key."},401);
+      if (offersRequest) {
         const card=url.searchParams.get("card");
         return validCard(card)?json(await scanOffers(card.trim(),env)):json({error:"Enter a card name."},400);
       }
-      if (url.pathname!=="/api/watch") return json({error:"Unknown route"},404);
-      if (!authorized(request,env)) return json({error:"Check your private scanner key."},401);
       if (request.method==="GET") {
         const results=await Promise.all((await watches(data)).map(async ({id,card,generation})=>{
           const result=await data.get(resultPrefix+id+":"+generation,"json");

@@ -134,7 +134,7 @@
       const status=app.querySelector("#shop-config-status");
       if (!url) { status.textContent="Enter a valid HTTPS scanner URL."; return; }
       const next={url:new URL(url).origin,key:config.elements.key.value.trim() || (new URL(url).origin===settings.url?settings.key:"")};
-      if (!next.key) { status.textContent="Enter your private scanner key."; return; }
+      if (next.key.length<24) { status.textContent="Enter your private scanner key of at least 24 characters."; return; }
       const controls=config.querySelectorAll("button");
       controls.forEach(button=>{button.disabled=true;});
       status.textContent="Checking the scanner connection…";
