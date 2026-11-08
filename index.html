@@ -9,15 +9,16 @@
 <style>
 :root{color-scheme:dark;--bg:#111111;--card:#1d1d1d;--line:#3b3b3b;--text:#f7f7f7;--muted:#bdbdbd;--accent:#a9c8f5;--accent-surface:#243248;--accent-edge:#6b8bb7;--owned-text:#ffdc9f;--owned-surface:#33291d;--owned-edge:#c39553;--dark:#303030;--radius:17px}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,sans-serif}button,input,textarea,select{font:inherit}button,a,input,textarea,select{outline-offset:4px}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent)}button{cursor:pointer}a{color:var(--accent)}a:hover,button:hover{filter:brightness(1.12)}h1,h2,h3,p{margin:0}h1{font-size:clamp(44px,7vw,86px);letter-spacing:-.078em;line-height:.98;font-weight:750}h2{font-size:32px;letter-spacing:-.045em;line-height:1.12}h3{font-size:20px;line-height:1.22;letter-spacing:-.025em}.muted{color:var(--muted)}.small{font-size:13px}.frame{width:min(1170px,calc(100% - 52px));margin:auto}.top{border-bottom:1px solid var(--line)}.top .frame{min-height:74px;display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{display:flex;gap:10px;align-items:center;color:var(--text);text-decoration:none;font-size:19px;font-weight:750;letter-spacing:-.05em}.logo{width:33px;height:33px;display:grid;place-items:center;border-radius:9px;background:var(--accent);color:#171717}.logo svg{width:22px}.nav{display:flex;gap:6px;flex-wrap:wrap}.nav a,.pill,.button{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:9px;padding:8px 13px;background:var(--card);color:var(--text);text-decoration:none;font-weight:650;font-size:13px}.nav a{background:none;border-color:transparent;color:var(--muted)}.nav a[aria-current]{color:var(--accent);background:var(--accent-surface)}.tag,.eyebrow,.num{font:700 11px/1.35 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase}.zone,.eyebrow{color:var(--accent)}.zone{white-space:nowrap}.hero{position:relative;overflow:hidden;isolation:isolate;margin-top:29px;padding:46px 46px 42px;min-height:258px;border:1px solid #394454;background:linear-gradient(106deg,#263346 0%,#20252c 53%,#18191c 100%);border-radius:22px}.hero h1{margin:12px 0 14px}.hero p:last-of-type{max-width:540px;color:#d6d6d6;font-size:16px}.work{margin:35px 0 58px}.heading{display:flex;justify-content:space-between;align-items:end;gap:18px;margin-bottom:17px}.heading .eyebrow{margin-bottom:7px}.switch,.filter-pills,.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.filter-list{display:grid;gap:8px;margin:0 0 16px}.filters{display:flex;align-items:center;gap:10px}.filter-label{flex:0 0 92px;font:700 11px/1.35 ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}.filters:has([aria-pressed=true]) .filter-label{color:var(--accent)}.pill{border-radius:999px;color:var(--muted);padding:6px 12px}.pill[aria-pressed=true],.switch button[aria-pressed=true]{border-color:var(--accent-edge);color:var(--accent);background:var(--accent-surface)}.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(255px,1fr);gap:20px;align-items:start}.stack{display:grid;gap:12px}.event,.panel,.deck,.empty{border:1px solid var(--line);border-radius:var(--radius);background:var(--card);padding:19px}.event{display:grid;grid-template-columns:66px minmax(0,1fr);gap:15px}.date{align-self:start;display:grid;justify-items:center;gap:2px;border:1px solid #4b617e;border-radius:11px;background:var(--accent-surface);color:var(--accent);padding:9px 4px}.date strong{font-size:24px;line-height:1}.tags{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 8px}.tag{display:inline-block;border:1px solid #5c5c5c;background:#303030;color:#eeeeee;border-radius:5px;padding:4px 6px;letter-spacing:.045em}.tag.alt{color:#d5d5d5;background:#2b2b2b;border-color:#464646}.event p{margin:5px 0 10px}.button.primary{background:var(--accent);border-color:var(--accent);color:#161616}.panel .eyebrow{margin-bottom:8px}.panel h3{margin-bottom:8px}.panel p{margin-bottom:12px}.panel ul{padding:0;list-style:none;margin:0}.panel li{border-top:1px solid var(--line);padding:8px 0}.panel li:last-child{padding-bottom:0}.footer{border-top:1px solid var(--line);color:var(--muted);padding:20px 0}.footer .frame{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.deck .heading{align-items:start;margin-bottom:12px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.stat{background:#292929;border-radius:10px;padding:9px 10px}.stat strong{font-size:20px;display:block}.stat span{color:var(--muted);font-size:12px}.meta-row{display:grid;grid-template-columns:1fr auto;gap:4px;align-items:center;border-top:1px solid var(--line);padding:8px 0}.meta-row b{color:var(--accent)}.bar{grid-column:1/-1;height:4px;border-radius:3px;background:#3c3c3c;overflow:hidden}.bar span{display:block;height:100%;background:#c9c9c9}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:7px 7px 7px 0;border-bottom:1px solid var(--line)}details{margin-top:10px}summary{cursor:pointer;color:var(--accent)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}dialog{width:min(530px,calc(100% - 30px));max-height:calc(100% - 32px);border:1px solid #666666;border-radius:18px;background:var(--card);color:var(--text);padding:22px}dialog::backdrop{background:#080808bb}form{display:grid;gap:10px}label{display:grid;gap:4px;font-weight:650;font-size:13px}input,select,textarea{min-width:0;width:100%;border:1px solid #646464;background:#151515;color:var(--text);border-radius:8px;padding:8px 10px}textarea{min-height:100px;resize:vertical}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.error{color:#eeeeee}.notice{min-height:22px}.empty p{margin:6px 0 12px}.visually-hidden{position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden;white-space:nowrap}
 @media(max-width:760px){.filters{align-items:flex-start;flex-direction:column;gap:5px}.filter-label{flex:auto}.filter-list{gap:13px}.frame{width:calc(100% - 30px)}.grid{grid-template-columns:1fr}.hero{padding:29px 24px;min-height:220px}.zone{display:none}.heading{align-items:start;flex-direction:column}.deck .heading{flex-direction:row}.top .frame{min-height:64px}.event{padding:13px;gap:10px;grid-template-columns:54px minmax(0,1fr)}.nav a,.button{padding:7px 9px}}@media(max-width:370px){.top .frame{gap:7px}.brand{font-size:15px}.nav{gap:0}.nav a{padding:6px}.stats{grid-template-columns:1fr}.two{grid-template-columns:1fr}}
-.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:32px}
-.scan-panel{width:min(370px,36vw);max-width:100%;padding:17px 19px;background:#181818;border:1px solid var(--line);border-radius:14px}
+.hero{display:grid;grid-template-columns:minmax(0,1fr);align-items:center;gap:32px}
+@media(min-width:761px){.hero:has(.scan-panel:not([hidden])){grid-template-columns:repeat(2,minmax(0,1fr))}}
+.scan-panel{width:100%;min-width:0;padding:21px 23px;background:#181818;border:1px solid var(--line);border-radius:14px}
 .scan-panel[hidden]{display:none}
-.scan-panel h2{font-size:26px;margin:3px 0 6px}
+.scan-panel h2{font-size:30px;margin:3px 0 6px}
 .scan-items{list-style:none;margin:0;padding:0;max-height:188px;overflow:auto}
 .scan-items li{border-top:1px solid var(--line);padding:8px 4px 4px 0;margin-top:7px}
 .scan-items a{font-weight:650}
 .scan-items p{font-size:12px!important;line-height:1.4}
-@media(max-width:760px){.hero{grid-template-columns:1fr;gap:20px}.scan-panel{width:100%}}
+#hero-copy:empty{display:none}
 
 /* Keep cards, forms and navigation usable in a narrow viewport. */
 @media (max-width: 760px) {
@@ -43,10 +44,9 @@
   .heading h2 { font-size: 28px; }
   .switch {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
   }
-  .switch .button { padding-inline: 6px; text-align: center; }
   .filter-list { gap: 10px; }
   .filter-pills { gap: 6px; }
   .grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
@@ -77,10 +77,10 @@
   .two { grid-template-columns: minmax(0, 1fr); }
   .footer .frame { flex-direction: column; gap: 4px; }
 }
-@media (max-width: 419px) {
+@media (max-width: 540px) {
   .top .frame { flex-direction: column; align-items: stretch; gap: 0; padding-block: 4px 8px; }
   .brand { align-self: flex-start; font-size: 19px; }
-  .nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   .nav a { border-color: var(--line); }
 }
 
@@ -103,12 +103,26 @@
 .combined-meta tr.meta-owned{background:var(--owned-surface);color:var(--owned-text)}
 .combined-meta tr.meta-owned .meta-archetype-link{color:inherit}
 .combined-meta tr.meta-owned td:first-child{box-shadow:inset 3px 0 var(--owned-edge);padding-left:8px}
+.event-filters{margin-bottom:16px;border-color:#40516a}
+.event-filters h3{margin-bottom:4px}
+.event-filters .filter-list{margin-bottom:0}
+.event-filters .filters{display:grid;grid-template-columns:110px minmax(0,1fr);align-items:center;gap:8px}
+.event-filters .filter-label{color:var(--text)}
+.event-option{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:7px 12px;border:1px solid #505963;border-radius:8px;background:#222529;color:var(--text);font-weight:650;text-align:left}
+.event-option::before{content:"";width:13px;height:13px;flex:none;border:1px solid #78838d;border-radius:50%}
+.event-option[aria-pressed=true]{border-color:var(--accent-edge);background:var(--accent-surface);color:var(--accent)}
+.event-option[aria-pressed=true]::before{border-color:var(--accent);background:radial-gradient(circle,var(--accent) 0 40%,transparent 46%)}
+.event-results-state{padding:9px 11px;border-left:3px solid var(--accent-edge);background:#22262d;border-radius:0 7px 7px 0}
+@media(max-width:760px){
+  .event-filters .filters{grid-template-columns:minmax(0,1fr);gap:5px}
+  .event-option{min-height:44px}
+}
 </style>
 </head>
 <body>
 <header class="top"><div class="frame">
 <a class="brand" href="#events"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="m12 12 8-8"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/></svg></span>Magic Dash</a>
-<nav class="nav" aria-label="Main"><a href="#events">Events</a><a href="#decks">Deck tracker</a></nav>
+<nav class="nav" aria-label="Main"><a href="#events">Events</a><a href="#decks">Deck tracker</a><a href="#buy">Buy Cards</a></nav>
 <span class="zone tag">Brisbane · AEST</span>
 </div></header>
 <main class="frame">
@@ -328,17 +342,21 @@ function showEvents() {
   const filterRow = (label="") => {
     const pills = ["All formats",...formats].map(format=>{
       const pressed = filter===format && (!label || category===label);
-      return '<button type="button" class="pill" aria-pressed="'+pressed+'" data-action="filter" data-category="'+label+'" data-id="'+format+'">'+format+'</button>';
+      return '<button type="button" class="event-option" aria-controls="event-results" aria-pressed="'+pressed+'" data-action="filter" data-category="'+label+'" data-id="'+format+'">'+format+'</button>';
     }).join("");
     return '<div class="filters" role="group" aria-label="'+(label ? label+" formats" : "Format")+'">'+
-      (label ? '<span class="filter-label">'+label+'</span>' : "")+'<div class="filter-pills">'+pills+'</div></div>';
+      '<span class="filter-label">'+(label || "Format")+'</span><div class="filter-pills">'+pills+'</div></div>';
   };
   const filters = scope==="local" ? eventCategories.map(filterRow).join("") : filterRow();
   const resultType = scope==="local" ? category.toLowerCase()+" " : "";
-  app.innerHTML = '<div class="heading"><div><p class="eyebrow">01 / Event tracker</p><h2>Upcoming events</h2></div><div class="switch" aria-label="Event region">'+
-    '<button type="button" class="button" data-action="scope" data-id="local" aria-pressed="'+(scope==="local")+'">Brisbane</button>'+
-    '<button type="button" class="button" data-action="scope" data-id="major" aria-pressed="'+(scope==="major")+'">Major events</button>'+button("+ Add event","event")+'</div></div>'+
-    '<div class="filter-list">'+filters+'</div><div class="grid"><section class="stack" aria-label="Event results"><p class="small muted" aria-live="polite">'+listings.length+' upcoming '+resultType+(listings.length===1?"event":"events")+'</p>'+
+  const selection = scope==="local" ? "Brisbane · "+category+" · "+filter : "Major events · "+filter;
+  app.innerHTML = '<div class="heading"><div><p class="eyebrow">01 / Event tracker</p><h2>Upcoming events</h2></div>'+button("+ Add event","event")+'</div>'+
+    '<section class="panel event-filters" aria-labelledby="event-filter-heading"><h3 id="event-filter-heading">Filter events</h3>'+
+    '<p class="small muted">Choose a region and a format. Your selection updates the list below.</p>'+
+    '<div class="filter-list"><div class="filters" role="group" aria-label="Event region"><span class="filter-label">Region</span><div class="switch">'+
+    '<button type="button" class="event-option" data-action="scope" data-id="local" aria-controls="event-results" aria-pressed="'+(scope==="local")+'">Brisbane</button>'+
+    '<button type="button" class="event-option" data-action="scope" data-id="major" aria-controls="event-results" aria-pressed="'+(scope==="major")+'">Major events</button></div></div>'+filters+'</div></section>'+
+    '<div class="grid"><section class="stack" id="event-results" aria-label="Event results"><p class="small event-results-state" aria-live="polite"><strong>'+escapeText(selection)+'</strong><br>'+listings.length+' upcoming '+(listings.length===1?"event":"events")+'</p>'+
     (listings.map(eventCard).join("") || '<div class="empty"><h3>No verified upcoming '+resultType+(filter==="All formats"?"":escapeText(filter)+" ")+'listings in this view</h3><p class="muted">Try another filter or add an event from an organiser.</p>'+button("+ Add event","event")+'</div>')+'</section>'+
     '<aside class="stack"><section class="panel"><p class="eyebrow">Sources</p><h3>'+ (scope==="local"?"Brisbane organisers":"Coverage & schedules")+'</h3><ul>'+
     (scope==="local"
@@ -492,20 +510,24 @@ function showDecks() {
     '<div class="actions">'+sourceLinks+button("Add snapshot","snapshot")+'</div>'+savedSnapshots+'</aside></div>';
 }
 function render() {
-  const decks = location.hash === "#decks";
+  const page = ["#decks","#buy"].includes(location.hash) ? location.hash : "#events";
+  const headings = {
+    "#events":["Magic: The Gathering / Event tracker","Magic Dash","Find your next Brisbane tournament or catch the biggest matches live from home."],
+    "#decks":["Deck tracker / Match results","Deck Tracker","Track your results against the decks people are bringing to tournaments."],
+    "#buy":["03 / Magic Dash","Buy Cards",""]
+  };
+  const [label,title,copy] = headings[page];
   document.querySelectorAll(".nav a").forEach(a=>{
-    const active = a.hash === (decks?"#decks":"#events");
+    const active = a.hash === page;
     if (active) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");
   });
-  document.querySelector("#hero-label").textContent = decks ? "Deck tracker / Match results" : "Magic: The Gathering / Event tracker";
-  document.querySelector("#hero-title").textContent = decks ? "Deck Tracker" : "Magic Dash";
-  document.querySelector("#hero-copy").textContent = decks
-    ? "Track your results against the decks people are bringing to tournaments."
-    : "Find your next Brisbane tournament or catch the biggest matches live from home.";
-  if (decks) {
-    scanPanel.hidden = true;
-    showDecks();
-  } else showEvents();
+  document.querySelector("#hero-label").textContent = label;
+  document.querySelector("#hero-title").textContent = title;
+  document.querySelector("#hero-copy").textContent = copy;
+  scanPanel.hidden = page!=="#events";
+  if (page==="#decks") showDecks();
+  else if (page==="#buy") app.innerHTML = "";
+  else showEvents();
 }
 const input = (label,name,value="",type="text",attrs="")=>'<label>'+label+'<input type="'+type+'" name="'+name+'" value="'+escapeText(value)+'" '+attrs+'></label>';
 const select = (label,name,values,value)=>'<label>'+label+'<select name="'+name+'">'+options(values,value)+'</select></label>';
