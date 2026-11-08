@@ -177,10 +177,30 @@
       controller?.abort();
       suggest.innerHTML="";
       input.value=query=card;
-      results.innerHTML='<div class="shop-result-heading"><h3>'+escape(card)+'</h3><button type="button" class="button">Watch card</button></div>'+
-        '<p class="small" id="shop-watch-status" role="status"></p>'+storeLinks(card);
+      results.innerHTML='<div class="shop-result-heading"><h3>'+escape(card)+'</h3><div class="actions">'+
+        '<button type="button" class="button primary" id="shop-open-all">Open all stores ('+stores.length+')</button>'+
+        '<button type="button" class="button" id="shop-watch-card">Watch card</button></div></div>'+
+        '<p class="small" id="shop-open-status" role="status"></p><p class="small" id="shop-watch-status" role="status"></p>'+storeLinks(card);
+      const openStatus=results.querySelector("#shop-open-status");
+      const openedUrls=new Set();
+      results.querySelector("#shop-open-all").onclick=()=>{
+        for (const storeLink of results.querySelectorAll(".shop-list a")) {
+          if (openedUrls.has(storeLink.href)) continue;
+          const tab=window.open("about:blank","_blank");
+          if (!tab) continue;
+          tab.opener=null;
+          tab.location.replace(storeLink.href);
+          openedUrls.add(storeLink.href);
+        }
+        if (openedUrls.size===stores.length) {
+          openStatus.textContent="Opened all "+stores.length+" store searches.";
+          openedUrls.clear();
+        } else {
+          openStatus.textContent="Opened "+openedUrls.size+" of "+stores.length+" store searches. Allow pop-ups for Magic Dash and click again to open the rest, or use the individual links below.";
+        }
+      };
       const status=results.querySelector("#shop-watch-status");
-      const watchButton=results.querySelector("button");
+      const watchButton=results.querySelector("#shop-watch-card");
       const isWatched=()=>(connected()?watches.map(item=>item.card):localWatches).some(name=>keyFor(name)===keyFor(card));
       const updateLabel=()=>{watchButton.textContent=isWatched()?"Stop watching":"Watch card";};
       updateLabel();
