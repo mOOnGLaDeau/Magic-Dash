@@ -134,12 +134,20 @@
 .shop-list .shop-item-title{white-space:normal}
 .shop-item-stock{text-align:right}
 @media(max-width:480px){.shop-search-row{align-items:stretch;flex-direction:column}.shop-switch .button{flex:1}.shop-list li{gap:8px}}
+.event.is-competing,.play-event.is-competing{border-color:#50976e}
+.nav a.has-competing,.button.competing[aria-pressed=true],.tag.competing,.event.is-competing .date{background:#203c2c;border-color:#50976e;color:#b8efcc}
+.play-events{grid-template-columns:minmax(0,1fr)}
+.play-event .heading{align-items:start}
+.play-match-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.play-matches .play-match-notes{white-space:pre-wrap;overflow-wrap:anywhere}
+.play-matches .play-match-meta{margin:3px 0}
+.play-match-form-date{margin-bottom:6px}
 </style>
 </head>
 <body>
 <header class="top"><div class="frame">
 <a class="brand" href="#events"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="m12 12 8-8"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/></svg></span>Magic Dash</a>
-<nav class="nav" aria-label="Main"><a href="#events">Events</a><a href="#decks">Deck tracker</a><a href="#buy">Buy Cards</a></nav>
+<nav class="nav" aria-label="Main"><a href="#events">Events</a><a href="#decks">Deck tracker</a><a href="#buy">Buy Cards</a><a href="#play">Play</a></nav>
 <span class="zone tag">Brisbane · AEST</span>
 </div></header>
 <main class="frame">
@@ -251,7 +259,7 @@ const button = (label,action,id="",primary=false) => '<button type="button" clas
 const options = (values,selected) => values.map(value=>'<option'+(value===selected?" selected":"")+'>'+escapeText(value)+'</option>').join("");
 const fmt = n => Number(n).toLocaleString("en-AU");
 const normalize = str => str.toLowerCase().replace(/[^a-z0-9]+/g,"");
-let state = {decks:[], customEvents:[], snapshots:{}};
+let state = {decks:[], customEvents:[], snapshots:{}, playEvents:[]};
 try {
   const saved = JSON.parse(localStorage.getItem(key));
   if (saved) state = {...state,...saved};
@@ -295,18 +303,21 @@ function calendarUrl(item) {
 }
 
 function eventCard(item) {
+  const competing = state.playEvents.some(event=>event.id===item.id && event.competing);
   const first = item.start || localDate(item.date);
   const last = item.through && item.through !== item.date ? " – "+dayText(localDate(item.through)) : "";
   const when = item.start
     ? dayText(first)+" · "+timeText(first)+(item.end ? " – "+timeText(item.end) : "")+" AEST"
     : dayText(first)+last+" · Event-local dates · Time TBA";
-  return '<article class="event"><div class="date" aria-hidden="true"><span class="num">'+dateFormat(first,{month:"short"})+'</span><strong>'+dateFormat(first,{day:"numeric"})+'</strong></div>'+
+  return '<article class="event'+(competing?" is-competing":"")+'"><div class="date" aria-hidden="true"><span class="num">'+dateFormat(first,{month:"short"})+'</span><strong>'+dateFormat(first,{day:"numeric"})+'</strong></div>'+
     '<div><div class="tags"><span class="tag">'+escapeText(item.format)+'</span><span class="tag alt">'+escapeText(item.kind)+'</span></div><h3>'+escapeText(item.title)+'</h3>'+
     '<p class="muted small">'+escapeText(item.venue)+'<br>'+escapeText(when)+(item.note ? '<br>'+escapeText(item.note) : "")+
     (item.scope==="major" && !item.stream ? '<br>Stream TBA' : "")+'</p><div class="actions">'+
     link(item.url,item.scope==="local"?"Event / registration ↗":"Event details ↗")+
     link(item.stream,(item.streamLabel || (item.custom ? "Stream" : "Official stream channel"))+" ↗",item.start?"button primary":"button")+
-    link(calendarUrl(item),"+ Google Calendar")+(item.custom ? button("Edit","event",item.id) : "")+'</div></div></article>';
+    link(calendarUrl(item),"+ Google Calendar")+
+    '<button type="button" class="button competing" data-action="compete" data-id="'+escapeText(item.id)+'" aria-pressed="'+competing+'">Competing</button>'+
+    (competing?'<a class="button" href="#play">Open Play</a>':"")+(item.custom ? button("Edit","event",item.id) : "")+'</div></div></article>';
 }
 
 const scanPanel = document.querySelector("#scan-panel");
@@ -330,6 +341,7 @@ function readScheduledScan() {
   } catch { return {lastScan:null,events:[]}; }
 }
 const scheduledScan = readScheduledScan();
+const eventListings = () => [...events,...scheduledScan.events,...state.customEvents];
 function isUpcoming(item,now) {
   return item.start ? (item.end ? Date.parse(item.end)>=now : eventDate(item)>=isoLocal(now)) : (item.through||item.date)>=isoLocal(now);
 }
@@ -352,7 +364,7 @@ function showScheduledNews(now) {
 function showEvents() {
   const now = Date.now();
   showScheduledNews(now);
-  const listings = [...events,...scheduledScan.events,...state.customEvents]
+  const listings = eventListings()
     .filter(item=>item.scope===scope && (scope==="major" || eventCategory(item)===category) &&
       (filter==="All formats" || item.format===filter) &&
       isUpcoming(item,now))
@@ -369,6 +381,7 @@ function showEvents() {
   const resultType = scope==="local" ? category.toLowerCase()+" " : "";
   const selection = scope==="local" ? "Brisbane · "+category+" · "+filter : "Major events · "+filter;
   app.innerHTML = '<div class="heading"><div><p class="eyebrow">01 / Event tracker</p><h2>Upcoming events</h2></div>'+button("+ Add event","event")+'</div>'+
+    '<p class="small" id="compete-status" role="status"></p>'+
     '<section class="panel event-filters" aria-labelledby="event-filter-heading"><h3 id="event-filter-heading">Filter events</h3>'+
     '<p class="small muted">Choose a region and a format. Your selection updates the list below.</p>'+
     '<div class="filter-list"><div class="filters" role="group" aria-label="Event region"><span class="filter-label">Region</span><div class="switch">'+
@@ -448,15 +461,20 @@ function archetypeNames(format) {
 function statsFor(matches) {
   const record = {W:0,L:0,D:0};
   matches.forEach(match=>record[match.result]++);
-  return {text:[record.W,record.L,record.D].join("–"),rate:matches.length ? (100*record.W/matches.length).toFixed(1)+"%" : "—"};
+  const rate = count => matches.length ? (100*count/matches.length).toFixed(1)+"%" : "-";
+  return {text:[record.W,record.L,record.D].join("-"),rate:rate(record.W),lossRate:rate(record.L)};
 }
-function comparison(deck) {
+function deckMatches(deck) {
+  return [...deck.matches,...state.playEvents.flatMap(event=>event.matches.filter(match=>match.deckId===deck.id)
+    .map(match=>({...match,date:eventDate(event),event:event.title,fromPlay:true})))];
+}
+function comparison(deck,matches) {
   const all = snapshots(deck.format);
   const current = combinedMetagame(deck.format,metaWindow);
   const target = current.joinKey(deck.archetype);
   const row = current.rows.find(item=>current.joinKey(item.name)===target);
   const groups = new Map();
-  deck.matches.forEach(match=>{
+  matches.forEach(match=>{
     const id = archetypeKey(deck.format,match.opponent);
     if (!groups.has(id)) groups.set(id,[]);
     groups.get(id).push(match);
@@ -465,7 +483,7 @@ function comparison(deck) {
     const opponent = group[0].opponent;
     const published = current.rows.find(item=>current.joinKey(item.name)===current.joinKey(opponent));
     const record = statsFor(group);
-    return '<tr><td>'+escapeText(opponent)+'</td><td>'+record.text+'</td><td>'+record.rate+'</td><td>'+percentage(published?.share)+'</td></tr>';
+    return '<tr><td>'+escapeText(opponent)+'</td><td>'+record.text+'</td><td>'+record.rate+'</td><td>'+record.lossRate+'</td><td>'+percentage(published?.share)+'</td></tr>';
   }).join("");
   const trends = all.map(snap=>{
     const entry = snap.rows.find(item=>item[1]!=null && archetypeKey(deck.format,item[0])===archetypeKey(deck.format,deck.archetype));
@@ -474,8 +492,8 @@ function comparison(deck) {
   return {current,row,matchupRows,trends};
 }
 function deckCard(deck) {
-  const {current,row,matchupRows,trends} = comparison(deck);
-  const sortedMatches = [...deck.matches].sort((a,b)=>b.date.localeCompare(a.date));
+  const sortedMatches = deckMatches(deck).reverse().sort((a,b)=>b.date.localeCompare(a.date));
+  const {current,row,matchupRows,trends} = comparison(deck,sortedMatches);
   const record = statsFor(sortedMatches);
   const recent = statsFor(sortedMatches.slice(0,10));
   const list = deck.list ? '<details><summary>Decklist</summary><pre>'+escapeText(deck.list)+'</pre></details>' : "";
@@ -485,10 +503,11 @@ function deckCard(deck) {
     '<div class="stat"><strong>'+percentage(row?.share)+'</strong><span>'+(current.share?.source==="MTGGoldfish"?"Goldfish reference share":"Published list share")+'</span></div></div>'+
     '<p class="small muted">Last '+Math.min(sortedMatches.length,10)+' matches: '+recent.text+' · '+recent.rate+'</p>'+
     '<p class="small muted">'+(row?.winRate!=null ? percentage(row.winRate)+" source win rate"+(row.matches!=null?" · "+fmt(row.matches)+" matches":"") : "Source win rate unavailable for this archetype and window.")+'</p>'+
-    (matchupRows ? '<details open><summary>Matchups against the meta</summary><div class="table-wrap"><table><thead><tr><th>Opponent</th><th>W–L–D</th><th>Your win %</th><th>List share</th></tr></thead><tbody>'+matchupRows+'</tbody></table></div></details>' : "")+
+    (matchupRows ? '<details open><summary>Matchup results by archetype</summary><div class="table-wrap"><table><thead><tr><th>Opponent archetype</th><th>W-L-D</th><th>Win %</th><th>Loss %</th><th>List share</th></tr></thead><tbody>'+matchupRows+'</tbody></table></div></details>' : "")+
     (trends ? '<details><summary>Archetype history</summary><div class="table-wrap"><table><thead><tr><th>Window</th><th>List share</th><th>Source</th></tr></thead><tbody>'+trends+'</tbody></table></div></details>' : "")+
-    (sortedMatches.length ? '<details><summary>Match log ('+sortedMatches.length+')</summary><div class="table-wrap"><table><thead><tr><th>Date</th><th>Opponent</th><th>Result</th><th>Event</th><th><span class="visually-hidden">Edit result</span></th></tr></thead><tbody>'+
-      sortedMatches.map(match=>'<tr><td>'+escapeText(match.date)+'</td><td>'+escapeText(match.opponent)+'</td><td>'+match.result+'</td><td>'+escapeText(match.event)+'</td><td>'+button("Edit","match",deck.id+"/"+match.id)+'</td></tr>').join("")+'</tbody></table></div></details>' : "")+list+'</article>';
+    (sortedMatches.length ? '<details><summary>Match history ('+sortedMatches.length+')</summary><div class="table-wrap"><table><thead><tr><th>Date</th><th>Opponent archetype</th><th>Result</th><th>Event</th><th><span class="visually-hidden">Manage result</span></th></tr></thead><tbody>'+
+      sortedMatches.map(match=>'<tr><td>'+escapeText(match.date)+'</td><td>'+escapeText(match.opponent)+(match.opponentName?'<br><span class="muted">'+escapeText(match.opponentName)+'</span>':"")+'</td><td>'+escapeText(match.result)+'</td><td>'+escapeText(match.event)+'</td><td>'+
+        (match.fromPlay?'<a href="#play">Open Play</a>':button("Edit","match",deck.id+"/"+match.id))+'</td></tr>').join("")+'</tbody></table></div></details>' : "")+list+'</article>';
 }
 function showDecks() {
   const {share,rates,rows,joinKey} = combinedMetagame(metaFormat,metaWindow);
@@ -526,24 +545,58 @@ function showDecks() {
     snapshot.rows.map(row=>'<tr><td>'+escapeText(row[0])+'</td><td>'+percentage(row[1])+'</td></tr>').join("")+'</tbody></table></div></details>').join("")+'</details>' : "";
   app.innerHTML = '<div class="heading"><div><p class="eyebrow">02 / Deck tracker</p><h2>Your decks</h2></div>'+button("+ Add deck","deck","",true)+'</div><div class="grid">'+
     '<section class="stack" aria-label="Saved decks">'+(state.decks.map(deckCard).join("") || '<div class="empty"><h3>Start with a deck you play</h3><p class="muted">Save your list and archetype, then log matches to see where your results are strong and which popular matchups need more games.</p>'+button("+ Add your first deck","deck","",true)+'</div>')+
-    '<p class="small muted">Decks and match logs are saved in this browser. Your win rate is wins divided by all logged matches, including draws.</p></section>'+
+    '<p class="small muted">Decks and matches are saved in this browser. Win and loss percentages use all logged matches, including draws.</p></section>'+
     '<aside class="panel"><p class="eyebrow">Metagame snapshots</p><h3>What’s being played</h3>'+
     '<label>Format<select id="meta-format">'+options(formats,metaFormat)+'</select></label>'+windowSlider+
     '<p class="small muted" role="status">'+escapeText(shareNote)+'<br>'+escapeText(rateNote)+'</p>'+table+expand+
     '<div class="actions">'+sourceLinks+button("Add snapshot","snapshot")+'</div>'+savedSnapshots+'</aside></div>'+
     window.MagicDashTools.recentTournaments(metaFormat);
 }
+const resultLabels = {W:"Win",L:"Loss",D:"Draw"};
+function playEventCard(event) {
+  const upcoming = isUpcoming(event,Date.now());
+  const badge = event.competing && upcoming ? '<span class="tag competing">Competing</span>' :
+    '<span class="tag alt">'+(upcoming?"History":"Past event")+'</span>';
+  const date = dayText(localDate(eventDate(event)));
+  const dateRange = event.through && event.through!==eventDate(event) ? " – "+dayText(localDate(event.through)) : "";
+  const record = statsFor(event.matches);
+  return '<article class="panel play-event'+(event.competing && upcoming?" is-competing":"")+'"><div class="heading"><div>'+
+    '<div class="tags">'+badge+'<span class="tag">'+escapeText(event.format)+'</span></div><h3>'+escapeText(event.title)+'</h3>'+
+    '<p class="small muted">'+escapeText(date+dateRange+" · "+event.venue)+'</p></div><div class="actions">'+
+    button("+ Log match","play-match",encodeURIComponent(event.id),true)+(event.competing && upcoming ? button("Stop competing","compete",event.id):"")+'</div></div>'+
+    (event.matches.length ? '<p class="small">Event record <strong>'+record.text+'</strong> W-L-D</p><ul class="play-matches">'+
+      event.matches.map((match,index)=>{
+        const deck = state.decks.find(item=>item.id===match.deckId);
+        const detail = [match.opponentName,deck?.name || match.deckName || "Deck unassigned"].filter(Boolean).join(" · ");
+        return '<li><div class="play-match-heading"><div><strong>Match '+(index+1)+' · '+escapeText(resultLabels[match.result])+' vs '+escapeText(match.opponent)+'</strong>'+
+          '<p class="small muted play-match-meta">'+escapeText(detail)+'</p></div>'+button("Edit match","play-match",encodeURIComponent(event.id)+"/"+match.id)+'</div>'+
+          (match.notes?'<p class="small play-match-notes">'+escapeText(match.notes)+'</p>':"")+'</li>';
+      }).join("")+'</ul>':'<p class="small muted">Use Log match after each round to build your event record.</p>')+'</article>';
+}
+function showPlay() {
+  const now = Date.now();
+  const upcoming = event => event.competing && isUpcoming(event,now);
+  const entries = [...state.playEvents].sort((a,b)=>Number(upcoming(b))-Number(upcoming(a)) ||
+    (upcoming(a)?eventDate(a).localeCompare(eventDate(b)):eventDate(b).localeCompare(eventDate(a))));
+  app.innerHTML='<div class="heading"><div><p class="eyebrow">04 / Match logging</p><h2>Your events</h2></div>'+
+    '<a class="button" href="#events">Find events</a></div><p class="small" id="compete-status" role="status"></p>'+
+    '<section class="stack play-events" aria-label="Your events">'+(entries.map(playEventCard).join("") ||
+    '<div class="empty"><h3>No events in Play yet</h3><p class="muted">Choose Competing on an upcoming event to start logging matches here.</p></div>')+'</section>';
+}
 function render() {
-  const page = ["#decks","#buy"].includes(location.hash) ? location.hash : "#events";
+  const page = ["#decks","#buy","#play"].includes(location.hash) ? location.hash : "#events";
   const headings = {
     "#events":["Magic: The Gathering / Event tracker","Magic Dash","Find your next Brisbane tournament or catch the biggest matches live from home."],
     "#decks":["Deck tracker / Match results","Deck Tracker","Track your results against the decks people are bringing to tournaments."],
-    "#buy":["03 / Magic Dash","Buy Cards","Search Australian card stores and keep a watchlist for your next pickups."]
+    "#buy":["03 / Magic Dash","Buy Cards","Search Australian card stores and keep a watchlist for your next pickups."],
+    "#play":["Play / Match log","Play","Log each round at the events you’re competing in and review past results."]
   };
   const [label,title,copy] = headings[page];
+  const competing = state.playEvents.some(event=>event.competing && isUpcoming(event,Date.now()));
   document.querySelectorAll(".nav a").forEach(a=>{
     const active = a.hash === page;
     if (active) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");
+    a.classList.toggle("has-competing",a.hash==="#events" && competing);
   });
   document.querySelector("#hero-label").textContent = label;
   document.querySelector("#hero-title").textContent = title;
@@ -551,6 +604,7 @@ function render() {
   scanPanel.hidden = page!=="#events";
   if (page==="#decks") showDecks();
   else if (page==="#buy") window.MagicDashTools.renderBuy(app);
+  else if (page==="#play") showPlay();
   else showEvents();
 }
 const input = (label,name,value="",type="text",attrs="")=>'<label>'+label+'<input type="'+type+'" name="'+name+'" value="'+escapeText(value)+'" '+attrs+'></label>';
@@ -602,7 +656,7 @@ function editDeck(id) {
     fields=>{
       const {name,archetype,format:chosenFormat,list} = fields;
       if (!name || !archetype) throw Error("Enter a deck name and an archetype.");
-      if (deck?.matches.length && chosenFormat!==deck.format) throw Error("This deck has match history. Add a new deck to track it in another format.");
+      if (deck && chosenFormat!==deck.format && deckMatches(deck).length) throw Error("This deck has match history. Add a new deck to track it in another format.");
       return {...state,decks:replace(state.decks,{id:deck?.id||uuid(),matches:deck?.matches||[],name,archetype,format:chosenFormat,list})};
     },deck?()=>({...state,decks:state.decks.filter(item=>item.id!==id)}):null);
   const form = editor.querySelector("form");
@@ -688,6 +742,47 @@ function editMatch(id) {
       return withMatches(replace(deck.matches,{...fields,id:match?.id||uuid(),result:fields.result[0]}));
     },match?()=>withMatches(deck.matches.filter(item=>item.id!==matchId)):null);
 }
+function toggleCompeting(id) {
+  const saved = state.playEvents.find(item=>item.id===id);
+  const listing = eventListings().find(item=>item.id===id);
+  if (!saved && !listing) return;
+  const competing = !saved?.competing;
+  const entry = {...(saved || listing),competing,matches:saved?.matches || []};
+  const playEvents = competing || entry.matches.length ? replace(state.playEvents,entry) : state.playEvents.filter(item=>item.id!==id);
+  if (!persist({...state,playEvents})) {
+    app.querySelector("#compete-status").textContent=saveMessage;
+    return;
+  }
+  render();
+  app.querySelector("#compete-status").textContent=competing ? "Event added to Play." :
+    entry.matches.length ? "Competing cleared. Your matches are saved in Play." : "Event removed from Play.";
+  const controls = [...app.querySelectorAll('[data-action="compete"]')];
+  controls.find(control=>control.dataset.id===id)?.focus();
+}
+function editPlayMatch(id) {
+  const [encodedEventId,matchId] = id.split("/");
+  const event = state.playEvents.find(item=>item.id===decodeURIComponent(encodedEventId));
+  if (!event) return;
+  const match = event.matches.find(item=>item.id===matchId);
+  const decks = state.decks.filter(deck=>deck.format===event.format);
+  const selectedDeck = match ? match.deckId : event.matches.at(-1)?.deckId || (decks.length===1?decks[0].id:"");
+  const deckOptions = decks.map(deck=>'<option value="'+escapeText(deck.id)+'"'+(deck.id===selectedDeck?" selected":"")+'>'+escapeText(deck.name)+'</option>').join("");
+  const withMatches = matches => ({...state,playEvents:replace(state.playEvents,{...event,matches})});
+  dialog(match?"Edit event match":"Log event match",
+    '<p class="small muted play-match-form-date">'+escapeText(event.title+" · "+dayText(localDate(eventDate(event))))+'</p>'+
+    '<div class="two"><label>Your deck<select name="deckId"><option value="">Assign later</option>'+deckOptions+'</select></label>'+
+    '<label>Result<select name="result" required><option value="">Choose result</option>'+options(Object.values(resultLabels),resultLabels[match?.result])+'</select></label></div>'+
+    input("Opponent archetype","opponent",match?.opponent,"text",'required maxlength="80" list="play-opponents" placeholder="e.g. Domain Zoo"')+
+    '<datalist id="play-opponents">'+options(archetypeNames(event.format))+'</datalist>'+
+    input("Opponent name (optional)","opponentName",match?.opponentName,"text",'maxlength="100"')+
+    textarea("Matchup notes (optional)","notes",match?.notes,'maxlength="2000"'),
+    fields=>{
+      if (!fields.opponent || !Object.values(resultLabels).includes(fields.result)) throw Error("Choose a result and enter the opponent archetype.");
+      const deck = decks.find(item=>item.id===fields.deckId);
+      return withMatches(replace(event.matches,{...fields,id:match?.id||uuid(),result:fields.result[0],
+        deckId:deck?.id || "",deckName:deck?.name || ""}));
+    },match?()=>withMatches(event.matches.filter(item=>item.id!==matchId)):null);
+}
 function editEvent(id) {
   const event = state.customEvents.find(item=>item.id===id);
   const date = event ? eventDate(event) : today();
@@ -704,8 +799,12 @@ function editEvent(id) {
       if (!fields.title || !fields.venue || !safeUrl(fields.url) || (fields.stream && !safeUrl(fields.stream))) throw Error("Enter a title, venue and valid HTTPS links.");
       const timed = fields.time ? {start:fields.date+"T"+fields.time+":00+10:00"} : {date:fields.date};
       const eventScope = fields.scope==="Brisbane" ? "local" : "major";
-      return {...state,customEvents:replace(state.customEvents,{...timed,id:event?.id||uuid(),custom:true,scope:eventScope,
-        category:eventScope==="local" ? fields.category : undefined,kind:"Personal listing",format:fields.format,title:fields.title,venue:fields.venue,url:fields.url,stream:fields.stream})};
+      const entry = {...timed,id:event?.id||uuid(),custom:true,scope:eventScope,
+        category:eventScope==="local" ? fields.category : undefined,kind:"Personal listing",format:fields.format,title:fields.title,venue:fields.venue,url:fields.url,stream:fields.stream};
+      const tracked = state.playEvents.find(item=>item.id===entry.id);
+      if (tracked?.matches.length && tracked.format!==entry.format) throw Error("This event has match history. Keep its original format.");
+      const playEvents = tracked ? replace(state.playEvents,{...entry,competing:tracked.competing,matches:tracked.matches}) : state.playEvents;
+      return {...state,customEvents:replace(state.customEvents,entry),playEvents};
     },event?()=>({...state,customEvents:state.customEvents.filter(item=>item.id!==id)}):null);
 }
 function editSnapshot() {
@@ -748,6 +847,8 @@ app.addEventListener("click",event=>{
       break;
     case "deck": editDeck(id); break;
     case "match": editMatch(id); break;
+    case "play-match": editPlayMatch(id); break;
+    case "compete": toggleCompeting(id); break;
     case "event": editEvent(id); break;
     case "snapshot": editSnapshot(); break;
     case "expand-meta":
