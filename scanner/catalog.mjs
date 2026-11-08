@@ -7,6 +7,7 @@ const shopify = [
   ["Plenty of Games", "https://www.plentyofgames.com.au"],
   ["Eternal Magic", "https://eternalmagic.cc"]
 ];
+const mateRoot = "https://www.mtgmate.com.au";
 
 export const cardKey = value => value.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 export const validCard = value => typeof value==="string" && value.trim().length<=120 && cardKey(value).length>=2;
@@ -37,8 +38,38 @@ export function shopifyOffers(product,card,store,root,path) {
     title:product.title,
     variant:v.title==="Default Title" ? "" : String(v.title || ""),
     store, price:v.price/100, currency:"AUD",
+    quantity:Number.isSafeInteger(v.inventory_quantity) && v.inventory_quantity>0 ? v.inventory_quantity : null,
     url:root+path+"?variant="+v.id
   }));
+}
+
+export function mtgMateOffers(html,card) {
+  const table=html.match(/<[^>]+\bdata-react-class=(["'])FilterableTable\1[^>]*>/i)?.[0];
+  const encoded=table?.match(/\bdata-react-props=(["'])([\s\S]*?)\1/i)?.[2];
+  if (!encoded) throw new Error("MTG Mate stock table unavailable");
+  const entities={amp:"&",quot:'"',apos:"'",lt:"<",gt:">"};
+  const json=encoded.replace(/&(amp|quot|apos|lt|gt|#\d+|#x[\da-f]+);/gi,(entity,key)=>{
+    if (key[0]!=="#") return entities[key.toLowerCase()];
+    const value=key[1].toLowerCase()==="x" ? parseInt(key.slice(2),16) : Number(key.slice(1));
+    return value<=0x10ffff ? String.fromCodePoint(value) : entity;
+  });
+  const {uuid}=JSON.parse(json);
+  if (!uuid || typeof uuid!=="object" || Array.isArray(uuid)) throw new Error("MTG Mate stock data unavailable");
+  return Object.entries(uuid).flatMap(([id,printing])=>{
+    if (!printing || typeof printing.name!=="string" || !matchesCard(printing.name,card) ||
+        typeof printing.link_path!=="string" || !/^\/cards\/[^/?#\\]+\/[a-z0-9]+\/[a-z0-9:%-]+$/i.test(printing.link_path)) return [];
+    const quantity=printing.quantity;
+    const price=printing.price;
+    if (!Number.isSafeInteger(quantity) || quantity<=0 || !Number.isSafeInteger(price) || price<=0) return [];
+    return [{id:"mate:"+id,title:printing.name,variant:[printing.set_name,printing.finish,printing.condition].filter(Boolean).join(" · "),
+      store:"MTG Mate",price:price/100,currency:"AUD",quantity,url:mateRoot+printing.link_path}];
+  });
+}
+
+async function searchMtgMate(card) {
+  const url=mateRoot+"/cards/"+encodeURIComponent(card.replaceAll(" ","_"));
+  const html=await (await read(url,{headers:{Accept:"text/html"}})).text();
+  return {store:"MTG Mate",offers:mtgMateOffers(html,card),status:"checked"};
 }
 
 async function searchShopify([store,root],card) {
@@ -86,7 +117,7 @@ export function ebayOffers(items,card) {
         !item.buyingOptions?.includes("FIXED_PRICE") || item.price?.currency!=="AUD" || !Number.isFinite(price) || price<=0 ||
         url.protocol!=="https:" || !["www.ebay.com.au","www.ebay.com"].includes(url.hostname) ||
         !/^\/itm\//.test(url.pathname)) return [];
-    return [{id:"ebay:"+item.itemId,title:item.title,variant:item.condition || "",store:"eBay Australia",price,currency:"AUD",url:url.href}];
+    return [{id:"ebay:"+item.itemId,title:item.title,variant:item.condition || "",store:"eBay Australia",price,currency:"AUD",quantity:null,url:url.href}];
   });
 }
 
@@ -105,7 +136,7 @@ async function searchEbay(card,env) {
 }
 
 export async function scanOffers(card,env) {
-  const requests=[...shopify.map(s=>[s[0],()=>searchShopify(s,card)]),["eBay Australia",()=>searchEbay(card,env)]];
+  const requests=[...shopify.map(s=>[s[0],()=>searchShopify(s,card)]),["MTG Mate",()=>searchMtgMate(card)],["eBay Australia",()=>searchEbay(card,env)]];
   const results=[];
   for (let i=0;i<requests.length;i+=2) {
     const batch=await Promise.all(requests.slice(i,i+2).map(async ([store,search])=>{

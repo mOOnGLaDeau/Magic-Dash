@@ -46,11 +46,11 @@
   let watches=[];
   const connected=()=>Boolean(settings.url && settings.key);
 
-  async function api(path,options={},privateRequest=false) {
-    const base=validUrl(settings.url);
+  async function api(path,options={},privateRequest=false,connection=settings) {
+    const base=validUrl(connection.url);
     if (!base) throw new Error("Connect a scanner to use live results.");
     const headers={...options.headers};
-    if (privateRequest && settings.key) headers.Authorization="Bearer "+settings.key;
+    if (privateRequest && connection.key) headers.Authorization="Bearer "+connection.key;
     const response=await fetch(new URL(path,base),{signal:AbortSignal.timeout(90000),redirect:"error",...options,headers});
     const data=await response.json();
     if (!response.ok) throw new Error(data.error || "Scanner temporarily unavailable.");
@@ -74,8 +74,11 @@
 
   function offerList(offers) {
     return '<ul class="shop-list">'+offers.filter(item=>item.currency==="AUD" && Number.isFinite(item.price) && validUrl(item.url))
-      .sort((a,b)=>a.price-b.price).map(item=>'<li><div>'+link(item.url,item.title)+
-        '<small class="muted">'+escape([item.store,item.variant].filter(Boolean).join(" · "))+'</small></div><strong>'+money.format(item.price)+'</strong></li>').join("")+'</ul>';
+      .sort((a,b)=>a.price-b.price).map(item=>'<li><div><strong class="shop-item-title">'+escape(item.title)+'</strong>'+
+        (item.variant?'<small class="muted">'+escape(item.variant)+'</small>':'')+
+        '<small>'+link(item.url,"View at "+item.store+" ↗")+'</small></div><div class="shop-item-stock"><strong>'+money.format(item.price)+'</strong>'+
+        '<small class="muted">'+(Number.isSafeInteger(item.quantity) && item.quantity>0 ? item.quantity+" in stock" : "In stock · quantity unavailable")+
+        '</small></div></li>').join("")+'</ul>';
   }
 
   async function suggestions(input,signal) {
@@ -113,7 +116,7 @@
       '<form id="shop-config"><label>Scanner HTTPS URL<input type="url" name="url" placeholder="https://your-scanner.workers.dev" value="'+escape(settings.url)+'"></label>'+
       '<label>Private scanner key<input type="password" name="key" autocomplete="off" placeholder="'+(settings.key?"Saved on this device":"Enter your key")+'"></label>'+
       '<p class="small muted">Use your own scanner URL. This browser sends your key only to that scanner.</p>'+
-      '<button class="button" type="submit">Save connection</button> <button class="button" type="button" id="shop-disconnect">Disconnect</button>'+
+      '<button class="button" type="submit">Connect scanner</button> <button class="button" type="button" id="shop-disconnect">Disconnect</button>'+
       '<p class="small" id="shop-config-status" role="status"></p></form></details></section>';
     const content=app.querySelector("#shop-content");
     const config=app.querySelector("#shop-config");
@@ -131,10 +134,25 @@
       const status=app.querySelector("#shop-config-status");
       if (!url) { status.textContent="Enter a valid HTTPS scanner URL."; return; }
       const next={url:new URL(url).origin,key:config.elements.key.value.trim() || (new URL(url).origin===settings.url?settings.key:"")};
-      if (!save("scanner",next)) { status.textContent="This browser could not save the connection."; return; }
-      settings=next;
-      await loadFeed();
-      if (content.isConnected) renderBuy(app);
+      if (!next.key) { status.textContent="Enter your private scanner key."; return; }
+      const controls=config.querySelectorAll("button");
+      controls.forEach(button=>{button.disabled=true;});
+      status.textContent="Checking the scanner connection…";
+      try {
+        const data=await api("/api/watch",{signal:AbortSignal.timeout(12000)},true,next);
+        if (!Array.isArray(data.watches)) throw new Error("The URL did not return a Magic Dash watchlist.");
+        if (!save("scanner",next)) throw new Error("This browser could not save the connection.");
+        settings=next;
+        watches=data.watches;
+        tools.feed={};
+        void loadFeed();
+        if (content.isConnected) {
+          renderBuy(app);
+          app.querySelector(".shop-settings").open=true;
+          app.querySelector("#shop-config-status").textContent="Scanner connected.";
+        }
+      } catch (error) { status.textContent="Connection failed. "+error.message; }
+      finally { controls.forEach(button=>{button.disabled=false;}); }
     };
     app.querySelector("#shop-disconnect").onclick=()=>{
       if (save("scanner",{url:"",key:""})) { settings={url:"",key:""}; tools.feed={}; watches=[]; renderBuy(app); }

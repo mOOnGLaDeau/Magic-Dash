@@ -10,4 +10,3 @@ crons = ["0 14 * * *"]
 
 [[kv_namespaces]]
 binding = "DASH_DATA"
-id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
