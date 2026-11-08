@@ -4,7 +4,7 @@ Magic Dash tracks Brisbane and major Magic: The Gathering events, personal decks
 
 ## Run locally
 
-Open `index.html` in a browser. The frontend has no build step. Scryfall card lookup and links to external sources require an internet connection. Buy Cards opens the results for the entered card directly at each store and can save a local watchlist without a scanner connection.
+Open `index.html` in a browser. The frontend has no build step. Scryfall card lookup and links to external sources require an internet connection. Find Cards opens the results for the entered card directly at each store and can save a local watchlist without a scanner connection.
 
 ## Source and data
 
@@ -24,7 +24,7 @@ npx wrangler deploy
 npx wrangler secret put WATCH_KEY
 ```
 
-Generate a random key of at least 24 characters. In Buy Cards, open **Live scanner settings**, enter the deployed Worker HTTPS URL and the key, and choose **Connect scanner**. The same key on both devices opens the same private watchlist. Store the key in a password manager. Set `DASH_ORIGINS` before deploying if you host the frontend on another origin.
+Generate a random key of at least 24 characters. In Find Cards, open **Live scanner settings**, enter the deployed Worker HTTPS URL and the key, and choose **Connect scanner**. The same key on both devices opens the same private watchlist. Store the key in a password manager. Set `DASH_ORIGINS` before deploying if you host the frontend on another origin.
 
 Optional eBay results require production Browse API access and the Worker secrets `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET`. The public repo and browser need neither eBay secret.
 

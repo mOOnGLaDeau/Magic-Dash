@@ -108,7 +108,7 @@
   }
 
   function renderBuy(app) {
-    app.innerHTML='<section class="panel shop-panel"><p class="eyebrow">Australian singles</p><div class="shop-switch" role="group" aria-label="Buy Cards view">'+
+    app.innerHTML='<section class="panel shop-panel"><p class="eyebrow">Australian singles</p><div class="shop-switch" role="group" aria-label="Find Cards view">'+
       '<button type="button" class="button" id="shop-search" aria-pressed="'+(mode==="search")+'">Search stores</button>'+
       '<button type="button" class="button" id="shop-watch" aria-pressed="'+(mode==="watch")+'">Watchlist</button></div>'+
       '<div id="shop-content"></div><details class="shop-settings"><summary>Live scanner settings</summary>'+
@@ -179,26 +179,33 @@
       input.value=query=card;
       results.innerHTML='<div class="shop-result-heading"><h3>'+escape(card)+'</h3><div class="actions">'+
         '<button type="button" class="button primary" id="shop-open-all">Open all stores ('+stores.length+')</button>'+
+        '<button type="button" class="button" id="shop-open-next" hidden>Open next store</button>'+
         '<button type="button" class="button" id="shop-watch-card">Watch card</button></div></div>'+
         '<p class="small" id="shop-open-status" role="status"></p><p class="small" id="shop-watch-status" role="status"></p>'+storeLinks(card);
       const openStatus=results.querySelector("#shop-open-status");
+      const nextStore=results.querySelector("#shop-open-next");
       const openedUrls=new Set();
-      results.querySelector("#shop-open-all").onclick=()=>{
+      const openStores=single=>{
         for (const storeLink of results.querySelectorAll(".shop-list a")) {
           if (openedUrls.has(storeLink.href)) continue;
           const tab=window.open("about:blank","_blank");
-          if (!tab) continue;
-          tab.opener=null;
-          tab.location.replace(storeLink.href);
-          openedUrls.add(storeLink.href);
+          if (tab) {
+            tab.opener=null;
+            tab.location.replace(storeLink.href);
+            openedUrls.add(storeLink.href);
+          }
+          if (single || !tab) break;
         }
+        nextStore.hidden=openedUrls.size===stores.length;
         if (openedUrls.size===stores.length) {
           openStatus.textContent="Opened all "+stores.length+" store searches.";
           openedUrls.clear();
         } else {
-          openStatus.textContent="Opened "+openedUrls.size+" of "+stores.length+" store searches. Allow pop-ups for Magic Dash and click again to open the rest, or use the individual links below.";
+          openStatus.textContent="Opened "+openedUrls.size+" of "+stores.length+" store searches. Use Open next store, or allow pop-ups for this site and click Open all stores again.";
         }
       };
+      results.querySelector("#shop-open-all").onclick=()=>openStores(false);
+      nextStore.onclick=()=>openStores(true);
       const status=results.querySelector("#shop-watch-status");
       const watchButton=results.querySelector("#shop-watch-card");
       const isWatched=()=>(connected()?watches.map(item=>item.card):localWatches).some(name=>keyFor(name)===keyFor(card));
@@ -295,7 +302,7 @@
     return '<section class="panel recent-results"><p class="eyebrow">Decklists and standings</p><h3>Recent '+escape(format)+' tournaments</h3>'+
       (last?'<p class="small muted">Last attempted refresh '+escape(time.format(new Date(last)))+' Brisbane time.'+
         (Object.values(tools.feed.status || {}).includes("previous data kept")?' Some sources kept their previous results.':'')+'</p>':
-        '<p class="small muted">Saved results. Connect the live scanner in Buy Cards for nightly refreshes.</p>')+
+        '<p class="small muted">Saved results. Connect the live scanner in Find Cards for nightly refreshes.</p>')+
       (links.length?'<ul class="shop-list">'+links.slice(0,8).join("")+'</ul>':'<p class="small muted">No tournament results available for this format.</p>')+
       (links.length>8?'<details><summary>More results</summary><ul class="shop-list">'+links.slice(8).join("")+'</ul></details>':'')+
       '<div class="actions">'+link("https://www.mtgo.com/decklists","All MTGO decklists ↗")+' '+link("https://mtgdecks.net/","Paper results ↗")+'</div></section>';

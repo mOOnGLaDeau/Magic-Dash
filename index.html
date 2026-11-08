@@ -133,6 +133,7 @@
 .shop-list strong,.shop-list time{white-space:nowrap}
 .shop-list .shop-item-title{white-space:normal}
 .shop-item-stock{text-align:right}
+#shop-open-next[hidden]{display:none}
 @media(max-width:480px){.shop-search-row{align-items:stretch;flex-direction:column}.shop-switch .button{flex:1}.shop-list li{gap:8px}}
 .event.is-competing,.play-event.is-competing{border-color:#50976e}
 .nav a.has-competing,.button.competing[aria-pressed=true],.tag.competing,.event.is-competing .date{background:#203c2c;border-color:#50976e;color:#b8efcc}
@@ -147,7 +148,7 @@
 <body>
 <header class="top"><div class="frame">
 <a class="brand" href="#events"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="m12 12 8-8"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/></svg></span>Magic Dash</a>
-<nav class="nav" aria-label="Main"><a href="#events">Events</a><a href="#decks">Deck tracker</a><a href="#buy">Buy Cards</a><a href="#play">Play</a></nav>
+<nav class="nav" aria-label="Main"><a href="#events">Events</a><a href="#decks">Deck tracker</a><a href="#buy">Find Cards</a><a href="#play">Play</a></nav>
 <span class="zone tag">Brisbane · AEST</span>
 </div></header>
 <main class="frame">
@@ -155,7 +156,7 @@
 <div class="hero-intro"><p id="hero-label" class="eyebrow"></p><h1 id="hero-title"></h1><p id="hero-copy"></p></div>
 <aside class="scan-panel" id="scan-panel" aria-labelledby="scan-title" hidden>
   <p class="eyebrow">Brisbane · Competitive</p>
-  <h2 id="scan-title">New Events Added This Week</h2>
+  <h2 id="scan-title">New Events Added</h2>
   <p id="scan-status" class="small muted"></p>
   <ul id="scan-items" class="scan-items"></ul>
 </aside>
@@ -345,23 +346,17 @@ const eventListings = () => [...events,...scheduledEvents,...state.customEvents]
 function isUpcoming(item,now) {
   return item.start ? (item.end ? Date.parse(item.end)>=now : eventDate(item)>=isoLocal(now)) : (item.through||item.date)>=isoLocal(now);
 }
-function showWeeklyNews(now) {
+function showRecentNews(now) {
   scanPanel.hidden = scope!=="local";
   if (scanPanel.hidden) return;
   const currentDate = isoLocal(now);
-  // Work with Brisbane calendar dates in UTC so the browser's time zone cannot shift the week.
-  const sunday = new Date(currentDate+"T00:00:00Z");
-  sunday.setUTCDate(sunday.getUTCDate()-sunday.getUTCDay());
-  const weekStart = sunday.toISOString().slice(0,10);
-  const saturday = new Date(sunday);
-  saturday.setUTCDate(saturday.getUTCDate()+6);
-  const weekEnd = saturday.toISOString().slice(0,10);
+  const oldest = new Date(currentDate+"T00:00:00Z");
+  oldest.setUTCDate(oldest.getUTCDate()-6);
+  const cutoff = oldest.toISOString().slice(0,10);
   const added = eventListings().filter(item=>item.scope==="local" && eventCategory(item)==="Competitive" &&
-    dateKey(item.discoveredOn) && item.discoveredOn>=weekStart && item.discoveredOn<=currentDate).sort((a,b)=>
+    dateKey(item.discoveredOn) && item.discoveredOn>=cutoff && item.discoveredOn<=currentDate).sort((a,b)=>
     b.discoveredOn.localeCompare(a.discoveredOn) || eventDate(a).localeCompare(eventDate(b)));
-  const shortDate = date => dateFormat(localDate(date),{day:"numeric",month:"short"});
-  scanStatus.textContent = "Sun "+shortDate(weekStart)+" – Sat "+shortDate(weekEnd)+
-    (added.length ? " · "+added.length+(added.length===1?" event added":" events added") : " · No new events yet");
+  scanStatus.textContent = added.length ? "" : "No new events yet.";
   scanItems.innerHTML = added.map(item=>{
     const when = item.start ? dayText(item.start)+" · "+timeText(item.start)+" AEST" : dayText(localDate(item.date))+" · Time TBA";
     return "<li>"+link(item.url,item.title,"")+
@@ -372,7 +367,7 @@ function showWeeklyNews(now) {
 
 function showEvents() {
   const now = Date.now();
-  showWeeklyNews(now);
+  showRecentNews(now);
   const listings = eventListings()
     .filter(item=>item.scope===scope && (scope==="major" || eventCategory(item)===category) &&
       (filter==="All formats" || item.format===filter) &&
@@ -597,7 +592,7 @@ function render() {
   const headings = {
     "#events":["Magic: The Gathering / Event tracker","Magic Dash","Find your next Brisbane tournament or catch the biggest matches live from home."],
     "#decks":["Deck tracker / Match results","Deck Tracker","Track your results against the decks people are bringing to tournaments."],
-    "#buy":["03 / Magic Dash","Buy Cards","Search Australian card stores and keep a watchlist for your next pickups."],
+    "#buy":["03 / Magic Dash","Find Cards","Search for a card and open the results at Australian card stores."],
     "#play":["Play / Match log","Play","Log each round at the events you’re competing in and review past results."]
   };
   const [label,title,copy] = headings[page];
