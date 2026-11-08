@@ -117,6 +117,21 @@
   .event-filters .filters{grid-template-columns:minmax(0,1fr);gap:5px}
   .event-option{min-height:44px}
 }
+.shop-panel,.recent-results{max-width:960px}
+.recent-results{margin-top:20px;max-width:none}
+.shop-switch,.shop-search-row,.shop-result-heading{display:flex;align-items:center;gap:10px}
+.shop-switch{margin:12px 0 20px}
+.shop-switch .button[aria-pressed="true"]{background:#163b64;border-color:#75baff;color:#fff}
+.shop-search-row input{flex:1;min-width:0}
+.shop-result-heading{justify-content:space-between;flex-wrap:wrap}
+.shop-result-heading :is(h3,h4){margin:0}
+#shop-suggestions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.shop-sources,.shop-settings,.shop-watch-card{margin-top:16px}
+.shop-list{padding:0;margin:10px 0;list-style:none}
+.shop-list li{display:flex;justify-content:space-between;align-items:start;gap:12px;padding:10px 0;border-bottom:1px solid rgba(138,181,227,.25);overflow-wrap:anywhere}
+.shop-list small{display:block;margin-top:4px}
+.shop-list strong,.shop-list time{white-space:nowrap}
+@media(max-width:480px){.shop-search-row{align-items:stretch;flex-direction:column}.shop-switch .button{flex:1}.shop-list li{gap:8px}}
 </style>
 </head>
 <body>
@@ -140,6 +155,7 @@
 <footer class="footer"><div class="frame"><span>Magic Dash · Magic: The Gathering tracker</span><span>All event times shown in Brisbane time (AEST)</span></div></footer>
 <dialog id="editor" aria-labelledby="editor-title"></dialog>
 <script type="application/json" id="brisbane-scheduled-scan">{"lastScan":null,"events":[]}</script>
+<script src="buy-cards.js"></script>
 <script>
 const formats = ["Standard","Modern","Legacy","7-Point Highlander"];
 const wizards = "https://magic.wizards.com/en/news/announcements/magiccon-heads-to-japan-europe-and-the-us-in-2027";
@@ -379,6 +395,8 @@ function archetypeKey(format,name) {
   return aliases[format]?.[key] || key;
 }
 function goldfishArchetypeUrl(format,name) {
+  const live = window.MagicDashTools.feed.meta?.[format]?.share?.rows?.find(row=>normalize(row[0])===normalize(name));
+  if (live?.[2] && /^[a-z0-9-]+$/i.test(live[2])) return "https://www.mtggoldfish.com/archetype/"+live[2];
   const links = goldfishArchetypes[format] || {};
   const exact = normalize(name);
   if (Object.hasOwn(links,exact)) return "https://www.mtggoldfish.com/archetype/"+links[exact];
@@ -389,10 +407,11 @@ function goldfishArchetypeUrl(format,name) {
 function combinedMetagame(format,windowIndex) {
   const highlander = format==="7-Point Highlander";
   const highlanderSnapshot = highlander && windowIndex===5 ? meta[format]["TopDeck.gg"] : null;
-  const share = highlanderSnapshot || (windowIndex===2 ? meta[format].MTGGoldfish : null);
+  const live = window.MagicDashTools.feed.meta?.[format];
+  const share = highlanderSnapshot || (windowIndex===2 ? live?.share || meta[format].MTGGoldfish : null);
   const rates = highlanderSnapshot
     ? {...highlanderSnapshot,rows:highlanderSnapshot.rows.filter(row=>row[4]!=null).map(row=>[row[0],row[4]])}
-    : windowRates[format]?.[windowIndex];
+    : live?.rates?.[windowIndex] || windowRates[format]?.[windowIndex];
   const ambiguous = new Set();
   for (const source of [share,rates]) {
     const keys = new Set();
@@ -419,7 +438,9 @@ function archetypeNames(format) {
   const own = state.decks.filter(deck=>deck.format===format).map(deck=>deck.archetype);
   const extra = format==="7-Point Highlander"
     ? ["Izzet Control","Value Midrange","Mox Aggro","Good-stuff Control"] : [];
-  const names = [...snapshots(format).flatMap(snapshot=>snapshot.rows.map(row=>row[0])),...extra,...own];
+  const live = window.MagicDashTools.feed.meta?.[format];
+  const latest = [live?.share,...Object.values(live?.rates || {})].flatMap(snapshot=>snapshot?.rows.map(row=>row[0]) || []);
+  const names = [...snapshots(format).flatMap(snapshot=>snapshot.rows.map(row=>row[0])),...latest,...extra,...own];
   return [...new Set(names)].sort((a,b)=>a.localeCompare(b));
 }
 function statsFor(matches) {
@@ -507,14 +528,15 @@ function showDecks() {
     '<aside class="panel"><p class="eyebrow">Metagame snapshots</p><h3>What’s being played</h3>'+
     '<label>Format<select id="meta-format">'+options(formats,metaFormat)+'</select></label>'+windowSlider+
     '<p class="small muted" role="status">'+escapeText(shareNote)+'<br>'+escapeText(rateNote)+'</p>'+table+expand+
-    '<div class="actions">'+sourceLinks+button("Add snapshot","snapshot")+'</div>'+savedSnapshots+'</aside></div>';
+    '<div class="actions">'+sourceLinks+button("Add snapshot","snapshot")+'</div>'+savedSnapshots+'</aside></div>'+
+    window.MagicDashTools.recentTournaments(metaFormat);
 }
 function render() {
   const page = ["#decks","#buy"].includes(location.hash) ? location.hash : "#events";
   const headings = {
     "#events":["Magic: The Gathering / Event tracker","Magic Dash","Find your next Brisbane tournament or catch the biggest matches live from home."],
     "#decks":["Deck tracker / Match results","Deck Tracker","Track your results against the decks people are bringing to tournaments."],
-    "#buy":["03 / Magic Dash","Buy Cards",""]
+    "#buy":["03 / Magic Dash","Buy Cards","Compare Australian singles and keep a watchlist for your next pickups."]
   };
   const [label,title,copy] = headings[page];
   document.querySelectorAll(".nav a").forEach(a=>{
@@ -526,7 +548,7 @@ function render() {
   document.querySelector("#hero-copy").textContent = copy;
   scanPanel.hidden = page!=="#events";
   if (page==="#decks") showDecks();
-  else if (page==="#buy") app.innerHTML = "";
+  else if (page==="#buy") window.MagicDashTools.renderBuy(app);
   else showEvents();
 }
 const input = (label,name,value="",type="text",attrs="")=>'<label>'+label+'<input type="'+type+'" name="'+name+'" value="'+escapeText(value)+'" '+attrs+'></label>';
@@ -750,6 +772,9 @@ app.addEventListener("change",event=>{
 });
 window.addEventListener("hashchange",render);
 render();
+window.MagicDashTools.loadFeed().then(updated=>{
+  if (updated && location.hash==="#decks" && !editor.open) showDecks();
+});
 
 </script>
 </body></html>

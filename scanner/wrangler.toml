@@ -1,0 +1,13 @@
+name = "magic-dash-scanner"
+main = "worker.mjs"
+compatibility_date = "2025-11-01"
+
+[vars]
+DASH_ORIGINS = "https://moongladeau.github.io"
+
+[triggers]
+crons = ["0 14 * * *"]
+
+[[kv_namespaces]]
+binding = "DASH_DATA"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
