@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Brisbane Magic events, major broadcasts, and your decks in context.">
+<meta name="theme-color" content="#111111">
+<title>Magic Dash — Magic event & deck tracker</title>
+<style>
+:root{color-scheme:dark;--bg:#111111;--card:#1d1d1d;--line:#3b3b3b;--text:#f7f7f7;--muted:#bdbdbd;--accent:#eeeeee;--dark:#303030;--radius:17px}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,sans-serif}button,input,textarea,select{font:inherit}button,a,input,textarea,select{outline-offset:4px}button{cursor:pointer}a{color:var(--accent)}a:hover,button:hover{filter:brightness(1.12)}h1,h2,h3,p{margin:0}h1{font-size:clamp(44px,7vw,86px);letter-spacing:-.078em;line-height:.98;font-weight:750}h2{font-size:32px;letter-spacing:-.045em;line-height:1.12}h3{font-size:20px;line-height:1.22;letter-spacing:-.025em}.muted{color:var(--muted)}.small{font-size:13px}.frame{width:min(1170px,calc(100% - 52px));margin:auto}.top{border-bottom:1px solid var(--line)}.top .frame{min-height:74px;display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{display:flex;gap:10px;align-items:center;color:var(--text);text-decoration:none;font-size:19px;font-weight:750;letter-spacing:-.05em}.logo{width:33px;height:33px;display:grid;place-items:center;border-radius:9px;background:var(--accent);color:#171717}.logo svg{width:22px}.nav{display:flex;gap:6px;flex-wrap:wrap}.nav a,.pill,.button{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:9px;padding:8px 13px;background:var(--card);color:var(--text);text-decoration:none;font-weight:650;font-size:13px}.nav a{background:none;border-color:transparent;color:var(--muted)}.nav a[aria-current]{color:var(--accent);background:#2e2e2e}.tag,.eyebrow,.num{font:700 11px/1.35 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase}.zone,.eyebrow{color:var(--accent)}.zone{white-space:nowrap}.hero{position:relative;overflow:hidden;isolation:isolate;margin-top:29px;padding:46px 46px 42px;min-height:258px;border:1px solid #454545;background:linear-gradient(106deg,#252525 0%,#1d1d1d 54%,#151515 100%);border-radius:22px}.hero h1{margin:12px 0 14px}.hero p:last-of-type{max-width:540px;color:#d6d6d6;font-size:16px}.work{margin:35px 0 58px}.heading{display:flex;justify-content:space-between;align-items:end;gap:18px;margin-bottom:17px}.heading .eyebrow{margin-bottom:7px}.switch,.filter-pills,.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.filter-list{display:grid;gap:8px;margin:0 0 16px}.filters{display:flex;align-items:center;gap:10px}.filter-label{flex:0 0 92px;font:700 11px/1.35 ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}.filters:has([aria-pressed=true]) .filter-label{color:var(--accent)}.pill{border-radius:999px;color:var(--muted);padding:6px 12px}.pill[aria-pressed=true],.switch button[aria-pressed=true]{border-color:#a5a5a5;color:var(--accent);background:#383838}.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(255px,1fr);gap:20px;align-items:start}.stack{display:grid;gap:12px}.event,.panel,.deck,.empty{border:1px solid var(--line);border-radius:var(--radius);background:var(--card);padding:19px}.event{display:grid;grid-template-columns:66px minmax(0,1fr);gap:15px}.date{align-self:start;display:grid;justify-items:center;gap:2px;border:1px solid #525252;border-radius:11px;background:#303030;color:var(--accent);padding:9px 4px}.date strong{font-size:24px;line-height:1}.tags{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 8px}.tag{display:inline-block;border:1px solid #5c5c5c;background:#303030;color:#eeeeee;border-radius:5px;padding:4px 6px;letter-spacing:.045em}.tag.alt{color:#d5d5d5;background:#2b2b2b;border-color:#464646}.event p{margin:5px 0 10px}.button.primary{background:var(--accent);border-color:var(--accent);color:#161616}.panel .eyebrow{margin-bottom:8px}.panel h3{margin-bottom:8px}.panel p{margin-bottom:12px}.panel ul{padding:0;list-style:none;margin:0}.panel li{border-top:1px solid var(--line);padding:8px 0}.panel li:last-child{padding-bottom:0}.footer{border-top:1px solid var(--line);color:var(--muted);padding:20px 0}.footer .frame{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.deck .heading{align-items:start;margin-bottom:12px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.stat{background:#292929;border-radius:10px;padding:9px 10px}.stat strong{font-size:20px;display:block}.stat span{color:var(--muted);font-size:12px}.meta-row{display:grid;grid-template-columns:1fr auto;gap:4px;align-items:center;border-top:1px solid var(--line);padding:8px 0}.meta-row b{color:var(--accent)}.bar{grid-column:1/-1;height:4px;border-radius:3px;background:#3c3c3c;overflow:hidden}.bar span{display:block;height:100%;background:#c9c9c9}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:7px 7px 7px 0;border-bottom:1px solid var(--line)}details{margin-top:10px}summary{cursor:pointer;color:var(--accent)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}dialog{width:min(530px,calc(100% - 30px));max-height:calc(100% - 32px);border:1px solid #666666;border-radius:18px;background:var(--card);color:var(--text);padding:22px}dialog::backdrop{background:#080808bb}form{display:grid;gap:10px}label{display:grid;gap:4px;font-weight:650;font-size:13px}input,select,textarea{min-width:0;width:100%;border:1px solid #646464;background:#151515;color:var(--text);border-radius:8px;padding:8px 10px}textarea{min-height:100px;resize:vertical}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.error{color:#eeeeee}.notice{min-height:22px}.empty p{margin:6px 0 12px}.visually-hidden{position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden;white-space:nowrap}
+@media(max-width:760px){.filters{align-items:flex-start;flex-direction:column;gap:5px}.filter-label{flex:auto}.filter-list{gap:13px}.frame{width:calc(100% - 30px)}.grid{grid-template-columns:1fr}.hero{padding:29px 24px;min-height:220px}.zone{display:none}.heading{align-items:start;flex-direction:column}.deck .heading{flex-direction:row}.top .frame{min-height:64px}.event{padding:13px;gap:10px;grid-template-columns:54px minmax(0,1fr)}.nav a,.button{padding:7px 9px}}@media(max-width:370px){.top .frame{gap:7px}.brand{font-size:15px}.nav{gap:0}.nav a{padding:6px}.stats{grid-template-columns:1fr}.two{grid-template-columns:1fr}}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:32px}
+.scan-panel{width:min(370px,36vw);max-width:100%;padding:17px 19px;background:#181818;border:1px solid var(--line);border-radius:14px}
+.scan-panel[hidden]{display:none}
+.scan-panel h2{font-size:26px;margin:3px 0 6px}
+.scan-items{list-style:none;margin:0;padding:0;max-height:188px;overflow:auto}
+.scan-items li{border-top:1px solid var(--line);padding:8px 4px 4px 0;margin-top:7px}
+.scan-items a{font-weight:650}
+.scan-items p{font-size:12px!important;line-height:1.4}
+@media(max-width:760px){.hero{grid-template-columns:1fr;gap:20px}.scan-panel{width:100%}}
+
+/* Keep cards, forms and navigation usable in a narrow viewport. */
+@media (max-width: 760px) {
+  .frame { width: calc(100% - 28px); }
+  .top .frame { min-height: 64px; gap: 12px; }
+  .nav a, .brand, .button, .pill { min-height: 44px; }
+  .nav a, .button, .pill { padding: 8px 12px; }
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    margin-top: 16px;
+    padding: 23px 18px;
+    gap: 17px;
+    border-radius: 16px;
+  }
+  .hero h1 { font-size: clamp(38px, 9vw, 62px); }
+  .hero p:last-of-type { font-size: 15px; }
+  .scan-panel { padding: 13px 14px; }
+  .scan-items a { display: inline-flex; align-items: center; min-height: 44px; }
+  .scan-items li { padding-top: 0; }
+  .work { margin: 24px 0 32px; }
+  .heading { align-items: stretch; gap: 12px; }
+  .heading h2 { font-size: 28px; }
+  .switch {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .switch .button { padding-inline: 6px; text-align: center; }
+  .filter-list { gap: 10px; }
+  .filter-pills { gap: 6px; }
+  .grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .stack { min-width: 0; }
+  .event {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 10px;
+    padding: 13px;
+  }
+  .event h3, .deck h3 { overflow-wrap: anywhere; }
+  .event .actions { gap: 6px; }
+  .event .button { text-align: center; }
+  .panel, .deck, .empty { padding: 15px; }
+  .deck .heading { flex-direction: column; }
+  .deck .actions { gap: 6px; }
+  .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .stat { padding: 8px; overflow-wrap: anywhere; }
+  .table-wrap { max-width: 100%; }
+  .table-wrap table { min-width: 270px; }
+  summary { min-height: 44px; padding: 10px 0; }
+  dialog {
+    width: min(530px, calc(100% - 20px));
+    max-height: calc(100dvh - 20px);
+    margin: auto;
+    padding: 16px;
+  }
+  input, select, textarea { min-height: 44px; font-size: 16px; }
+  .two { grid-template-columns: minmax(0, 1fr); }
+  .footer .frame { flex-direction: column; gap: 4px; }
+}
+@media (max-width: 419px) {
+  .top .frame { flex-direction: column; align-items: stretch; gap: 0; padding-block: 4px 8px; }
+  .brand { align-self: flex-start; font-size: 19px; }
+  .nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .nav a { border-color: var(--line); }
+}
+
+.meta-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.meta-owned{padding:8px;border:1px solid #a5a5a5;border-radius:7px;background:#343434;margin:4px 0}
+.meta-owned .tag{margin-top:3px}
+.meta-value{white-space:nowrap;text-align:right}
+.meta-expand{margin:10px 0;width:100%}
+.archetype-picker{border:1px solid var(--line);border-radius:9px;padding:10px;display:grid;gap:7px;margin:0;min-width:0}
+.archetype-picker legend{padding:0 4px;font-weight:650}
+.archetype-picker select{padding:3px}
+.archetype-picker option{padding:4px 6px}
+.card-results{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.card-search{display:grid;gap:6px}
+</style>
+</head>
+<body>
+<header class="top"><div class="frame">
+<a class="brand" href="#events"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="m12 12 8-8"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/></svg></span>Magic Dash</a>
+<nav class="nav" aria-label="Main"><a href="#events">Events</a><a href="#decks">Deck tracker</a></nav>
+<span class="zone tag">Brisbane · AEST</span>
+</div></header>
+<main class="frame">
+<section class="hero">
+<div class="hero-intro"><p id="hero-label" class="eyebrow"></p><h1 id="hero-title"></h1><p id="hero-copy"></p></div>
+<aside class="scan-panel" id="scan-panel" aria-labelledby="scan-title" hidden>
+  <p class="eyebrow">Brisbane · Competitive</p>
+  <h2 id="scan-title">What’s New</h2>
+  <p id="scan-status" class="small muted"></p>
+  <ul id="scan-items" class="scan-items"></ul>
+</aside>
+</section>
+<div class="work" id="app"></div>
+</main>
+<footer class="footer"><div class="frame"><span>Magic Dash · Magic: The Gathering tracker</span><span>All event times shown in Brisbane time (AEST)</span></div></footer>
+<dialog id="editor" aria-labelledby="editor-title"></dialog>
+<script type="application/json" id="brisbane-scheduled-scan">{"lastScan":null,"events":[]}</script>
+<script>
+const formats = ["Standard","Modern","Legacy","7-Point Highlander"];
+const wizards = "https://magic.wizards.com/en/news/announcements/magiccon-heads-to-japan-europe-and-the-us-in-2027";
+const twitch = "https://www.twitch.tv/magic";
+const worlds = "https://magic.gg/news/world-championship-32-viewers-guide";
+const regionals = "https://magic.gg/news/play-update-2026-27-round-3-regional-championship-promos-and-qualifiers";
+const events = [
+  {"id":"mtg-mate-7ph-2026-11-11","scope":"local","category":"Casual","kind":"Weekly play","format":"7-Point Highlander","title":"Playtest-Friendly 7PH","venue":"MTG MATE Event Centre · Banyo","start":"2026-11-11T19:00:00+10:00","url":"https://www.mtgmate.com.au/pages/event-centre"},
+  {"id":"mtg-mate-7ph-2026-11-25","scope":"local","category":"Casual","kind":"Weekly play","format":"7-Point Highlander","title":"Playtest-Friendly 7PH","venue":"MTG MATE Event Centre · Banyo","start":"2026-11-25T19:00:00+10:00","end":"2026-11-25T22:00:00+10:00","url":"https://www.trybooking.com/events/landing/1654275"},
+  {"id":"mtg-mate-7ph-2027-01-20","scope":"local","category":"Casual","kind":"Weekly play","format":"7-Point Highlander","title":"Playtest-Friendly 7PH","venue":"MTG MATE Event Centre · Banyo","start":"2027-01-20T19:00:00+10:00","url":"https://www.mtgmate.com.au/pages/event-centre"},
+  {"id":"rcq-ctc-sumner-2026-11-14","scope":"local","category":"Competitive","kind":"RCQ","format":"Standard","title":"ANZ Super Series Standard Qualifier","venue":"CTC Games · Sumner","start":"2026-11-14T12:30:00+10:00","end":"2026-11-14T16:30:00+10:00","url":"https://tavernfinder.com/en/venues/ctc-games-sumner/events/4ed8d0fb-50f8-4c6f-aaae-e37dcd8421f0","note":"$25 entry · 24-player capacity"},
+  {"id":"strath-7ph-2026-11-10","scope":"local","category":"Competitive","kind":"Win a box","format":"7-Point Highlander","title":"7-Point Highlander Win-a-Box","venue":"Good Games · Strathpine","start":"2026-11-10T18:30:00+10:00","end":"2026-11-10T22:30:00+10:00","url":"https://tavernfinder.com/en/venues/good-games-strathpine/events/975e54f8-02b1-4b93-ad43-9f63c9e62f45","note":"$20 entry"},
+  {"id":"strath-7ph-2026-11-17","scope":"local","category":"Competitive","kind":"Win a box","format":"7-Point Highlander","title":"7-Point Highlander Win-a-Box","venue":"Good Games · Strathpine","start":"2026-11-17T18:30:00+10:00","end":"2026-11-17T22:30:00+10:00","url":"https://tavernfinder.com/en/venues/good-games-strathpine/events/fff13209-bb42-4cf3-9518-558ea09368fc","note":"$20 entry"},
+  {"id":"clayfield-showdown-2026-11-10","scope":"local","category":"Casual","kind":"Standard Showdown","format":"Standard","title":"Clayfield Standard Showdown","venue":"Vault Games · Clayfield","start":"2026-11-10T18:30:00+10:00","end":"2026-11-10T22:30:00+10:00","url":"https://tavernfinder.com/en/venues/vault-games-clayfield/events/da159279-1324-48f1-8d2e-6729c2a6a069","note":"$14 entry"},
+  {"id":"tempest-showdown-2026-11-12","scope":"local","category":"Casual","kind":"Standard Showdown","format":"Standard","title":"Standard Showdown","venue":"Tempest Collectables · Taigum","start":"2026-11-12T18:00:00+10:00","end":"2026-11-12T22:00:00+10:00","url":"https://tavernfinder.com/en/venues/tempest-collectables-taigum/events/fe484ef7-27cf-4f39-9ab0-585cae75d654"},
+  {"id":"dice-standard-2026-11-12","scope":"local","category":"Casual","kind":"Weekly play","format":"Standard","title":"Thursday Night Standard","venue":"The Dice Spot · Geebung","start":"2026-11-12T18:00:00+10:00","end":"2026-11-12T22:00:00+10:00","url":"https://tavernfinder.com/en/venues/the-dice-spot-geebung-u8-10-prosperity-place-geebung"},
+  {"id":"dice-standard-2026-11-19","scope":"local","category":"Casual","kind":"Weekly play","format":"Standard","title":"Thursday Night Standard","venue":"The Dice Spot · Geebung","start":"2026-11-19T18:00:00+10:00","end":"2026-11-19T22:00:00+10:00","url":"https://tavernfinder.com/en/venues/the-dice-spot-geebung-u8-10-prosperity-place-geebung"},
+  {"id":"raptor-modern-2026-11-10","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Tuesday Modern","venue":"Raptor Games · Wynnum","start":"2026-11-10T19:00:00+10:00","end":"2026-11-10T23:00:00+10:00","url":"https://tavernfinder.com/en/venues/raptor-games-wynnum"},
+  {"id":"raptor-modern-2026-11-17","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Tuesday Modern","venue":"Raptor Games · Wynnum","start":"2026-11-17T19:00:00+10:00","end":"2026-11-17T23:00:00+10:00","url":"https://tavernfinder.com/en/venues/raptor-games-wynnum"},
+  {"id":"raptor-modern-2026-11-24","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Tuesday Modern","venue":"Raptor Games · Wynnum","start":"2026-11-24T19:00:00+10:00","end":"2026-11-24T23:00:00+10:00","url":"https://tavernfinder.com/en/venues/raptor-games-wynnum"},
+  {"id":"raptor-modern-2026-12-01","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Tuesday Modern","venue":"Raptor Games · Wynnum","start":"2026-12-01T19:00:00+10:00","end":"2026-12-01T23:00:00+10:00","url":"https://tavernfinder.com/en/venues/raptor-games-wynnum"},
+  {"id":"raptor-modern-2026-12-08","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Tuesday Modern","venue":"Raptor Games · Wynnum","start":"2026-12-08T19:00:00+10:00","end":"2026-12-08T23:00:00+10:00","url":"https://tavernfinder.com/en/venues/raptor-games-wynnum"},
+  {"id":"raptor-showdown-2026-11-13","scope":"local","category":"Casual","kind":"Standard Showdown","format":"Standard","title":"Standard Showdown","venue":"Raptor Games · Wynnum","start":"2026-11-13T19:00:00+10:00","end":"2026-11-13T23:00:00+10:00","url":"https://tavernfinder.com/en/venues/raptor-games-wynnum"},
+  {"id":"raptor-showdown-2026-11-20","scope":"local","category":"Casual","kind":"Standard Showdown","format":"Standard","title":"Standard Showdown","venue":"Raptor Games · Wynnum","start":"2026-11-20T19:00:00+10:00","end":"2026-11-20T23:00:00+10:00","url":"https://tavernfinder.com/en/venues/raptor-games-wynnum"},
+  {"id":"raptor-showdown-2026-11-27","scope":"local","category":"Casual","kind":"Standard Showdown","format":"Standard","title":"Standard Showdown","venue":"Raptor Games · Wynnum","start":"2026-11-27T19:00:00+10:00","end":"2026-11-27T23:00:00+10:00","url":"https://tavernfinder.com/en/venues/raptor-games-wynnum"},
+  {"id":"raptor-showdown-2026-12-04","scope":"local","category":"Casual","kind":"Standard Showdown","format":"Standard","title":"Standard Showdown","venue":"Raptor Games · Wynnum","start":"2026-12-04T19:00:00+10:00","end":"2026-12-04T23:00:00+10:00","url":"https://tavernfinder.com/en/venues/raptor-games-wynnum"},
+  {"id":"side-quest-modern-2026-11-20","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Friday Night Modern","venue":"Side Quest Cards · Yamanto","start":"2026-11-20T18:30:00+10:00","end":"2026-11-20T22:30:00+10:00","url":"https://tavernfinder.com/en/venues/side-quest-cards-qld"},
+  {"id":"mtg-mate-modern-2026-11-13","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Friday Night Modern","venue":"MTG MATE Event Centre · Banyo","start":"2026-11-13T18:30:00+10:00","end":"2026-11-13T22:30:00+10:00","url":"https://tavernfinder.com/en/venues/mtg-mate-banyo"},
+  {"id":"mtg-mate-modern-2026-11-20","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Friday Night Modern","venue":"MTG MATE Event Centre · Banyo","start":"2026-11-20T18:30:00+10:00","end":"2026-11-20T22:30:00+10:00","url":"https://tavernfinder.com/en/venues/mtg-mate-banyo"},
+  {"id":"mtg-mate-modern-2026-11-27","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Friday Night Modern","venue":"MTG MATE Event Centre · Banyo","start":"2026-11-27T18:30:00+10:00","end":"2026-11-27T22:30:00+10:00","url":"https://tavernfinder.com/en/venues/mtg-mate-banyo"},
+  {"id":"mtg-mate-modern-2026-12-04","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Friday Night Modern","venue":"MTG MATE Event Centre · Banyo","start":"2026-12-04T18:30:00+10:00","end":"2026-12-04T22:30:00+10:00","url":"https://tavernfinder.com/en/venues/mtg-mate-banyo"},
+  {"id":"mtg-mate-modern-2026-12-11","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Friday Night Modern","venue":"MTG MATE Event Centre · Banyo","start":"2026-12-11T18:30:00+10:00","end":"2026-12-11T22:30:00+10:00","url":"https://tavernfinder.com/en/venues/mtg-mate-banyo"},
+  {"id":"mtg-mate-modern-2026-12-18","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Friday Night Modern","venue":"MTG MATE Event Centre · Banyo","start":"2026-12-18T18:30:00+10:00","end":"2026-12-18T22:30:00+10:00","url":"https://tavernfinder.com/en/venues/mtg-mate-banyo"},
+  {"id":"strath-modern-2026-11-25","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Mid-Week Modern","venue":"Good Games · Strathpine","start":"2026-11-25T18:30:00+10:00","end":"2026-11-25T22:30:00+10:00","url":"https://tavernfinder.com/en/venues/good-games-strathpine"},
+  {"id":"strath-modern-2026-12-02","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Mid-Week Modern","venue":"Good Games · Strathpine","start":"2026-12-02T18:30:00+10:00","end":"2026-12-02T22:30:00+10:00","url":"https://tavernfinder.com/en/venues/good-games-strathpine"},
+  {"id":"strath-modern-2026-12-09","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Mid-Week Modern","venue":"Good Games · Strathpine","start":"2026-12-09T18:30:00+10:00","end":"2026-12-09T22:30:00+10:00","url":"https://tavernfinder.com/en/venues/good-games-strathpine"},
+  {"id":"strath-modern-2026-12-16","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Mid-Week Modern","venue":"Good Games · Strathpine","start":"2026-12-16T18:30:00+10:00","end":"2026-12-16T22:30:00+10:00","url":"https://tavernfinder.com/en/venues/good-games-strathpine"},
+  {"id":"strath-modern-2026-12-23","scope":"local","category":"Casual","kind":"Weekly play","format":"Modern","title":"Mid-Week Modern","venue":"Good Games · Strathpine","start":"2026-12-23T18:30:00+10:00","end":"2026-12-23T22:30:00+10:00","url":"https://tavernfinder.com/en/venues/good-games-strathpine"},
+  {"id":"mtg-mate-7ph-2026-12-09","scope":"local","category":"Casual","kind":"Weekly play","format":"7-Point Highlander","title":"Playtest-Friendly 7PH","venue":"MTG MATE Event Centre · Banyo","start":"2026-12-09T19:00:00+10:00","end":"2026-12-09T22:00:00+10:00","url":"https://www.trybooking.com/events/landing/1656835","note":"$15 entry · Registration from 6 pm"},
+  {"id":"mtg-mate-7ph-2026-12-23","scope":"local","category":"Casual","kind":"Weekly play","format":"7-Point Highlander","title":"Playtest-Friendly 7PH","venue":"MTG MATE Event Centre · Banyo","start":"2026-12-23T19:00:00+10:00","end":"2026-12-23T22:00:00+10:00","url":"https://www.trybooking.com/events/landing/1656837","note":"$15 entry · Registration from 6 pm"},
+  {"id":"mtg-mate-7ph-2027-01-06","scope":"local","category":"Casual","kind":"Weekly play","format":"7-Point Highlander","title":"Playtest-Friendly 7PH","venue":"MTG MATE Event Centre · Banyo","start":"2027-01-06T19:00:00+10:00","end":"2027-01-06T22:00:00+10:00","url":"https://www.trybooking.com/events/landing/1656840","note":"$15 entry · Registration from 6 pm"},
+  {id:"modern-13",scope:"local",category:"Casual",kind:"Weekly play",format:"Modern",title:"Friday Night Modern",venue:"Side Quest Cards · Yamanto",start:"2026-11-13T18:30:00+10:00",end:"2026-11-13T22:30:00+10:00",url:"https://tavernfinder.com/en/venues/side-quest-cards-qld"},
+  ...["2026-11-17","2026-12-01","2026-12-08","2026-12-15","2026-12-22"].map(date=>({id:"modern-"+date,scope:"local",category:"Casual",kind:"Weekly play",format:"Modern",title:"Tuesday Modern",venue:"Playmantis · Annerley",start:date+"T18:30:00+10:00",url:"https://playmantis.com.au/collections/events"})),
+  ...["2026-11-19","2026-12-03","2026-12-17"].map(date=>({id:"7ph-"+date,scope:"local",category:"Casual",kind:"Weekly play",format:"7-Point Highlander",title:"Playtest-Friendly 7PH",venue:"Playmantis · Annerley",start:date+"T18:30:00+10:00",url:"https://playmantis.com.au/collections/events"})),
+  {id:"rcq-clayfield",scope:"local",kind:"RCQ",format:"Standard",title:"Cycle 14 Standard RCQ",venue:"Vault Games · Clayfield",start:"2026-11-28T10:00:00+10:00",url:"https://vaultgames.com.au/collections/events/products/anz-magic-super-series-cycle-14-rcq-standard-sat-28th-nov-vault-games-clayfield",note:"$40 entry · Round 1 at 10:30 am"},
+  {id:"zero-spend",scope:"local",kind:"Tournament",format:"7-Point Highlander",title:"7PH Zero Spend Full Send",venue:"MTG MATE Event Centre · Banyo",start:"2026-11-28T10:00:00+10:00",end:"2026-11-28T17:00:00+10:00",url:"https://www.trybooking.com/au/event/1659879",note:"Free entry · Registration via TryBooking"},
+  ...[
+    ["1","2026-11-14T02:00:00+10:00","Standard + Draft"],
+    ["2","2026-11-15T02:00:00+10:00","Standard + Draft"],
+    ["Top 8","2026-11-16T01:00:00+10:00","Standard"]
+  ].map(([day,start,detail])=>({id:"worlds-"+day,scope:"major",kind:"World Championship",format:"Standard",title:"World Championship 32 · "+(day==="Top 8"?day:"Day "+day),venue:"MagicCon · Atlanta, USA",start,url:worlds,stream:twitch,streamLabel:"Watch on Twitch",note:detail+" · Broadcast start"})),
+  ...[
+    ["Shanghai","China","2027-01-08","2027-01-10"],["Bangkok","Thailand","2027-01-08","2027-01-10"],
+    ["St. Louis","USA","2027-01-22","2027-01-24"],["São Paulo","Brazil","2027-01-22","2027-01-24"],
+    ["Mexico City","Mexico","2027-01-22","2027-01-24"],["Melbourne","Australia / NZ","2027-02-05","2027-02-07"],
+    ["San Diego","USA","2027-02-05","2027-02-07"],["Vancouver","Canada","2027-02-05","2027-02-06"],
+    ["Aichi","Japan","2027-02-06","2027-02-07"],["Bilbao","Spain","2027-02-12","2027-02-14"],
+    ["Taipei City","Taiwan","2027-02-14","2027-02-14"]
+  ].map(([city,region,date,through])=>({id:"rc-"+city,scope:"major",kind:"Regional Championship",format:"Standard",title:"Regional Championship · "+city,venue:city+", "+region,date,through,url:regionals})),
+  {id:"detroit",scope:"major",kind:"Pro Tour",format:"Modern",title:"Pro Tour Nauctis",venue:"MagicCon · Detroit, USA",date:"2027-02-26",through:"2027-02-28",url:"https://magic.gg/events/pro-tour-nauctis",stream:twitch,note:"Modern + Draft"},
+  {id:"tokyo",scope:"major",kind:"Pro Tour",format:"Standard",title:"Pro Tour Tokyo",venue:"MagicCon · Tokyo, Japan",date:"2027-05-14",through:"2027-05-16",url:wizards,stream:twitch,note:"Standard + Draft"},
+  {id:"vegas",scope:"major",kind:"Pro Tour",format:"Standard",title:"Pro Tour Las Vegas",venue:"MagicCon · Las Vegas, USA",date:"2027-08-27",through:"2027-08-29",url:wizards,stream:twitch,note:"Standard + Draft"},
+  {id:"amsterdam",scope:"major",kind:"World Championship",format:"Standard",title:"World Championship 33",venue:"MagicCon · Amsterdam, Netherlands",date:"2027-12-03",through:"2027-12-05",url:wizards,stream:twitch,note:"Standard + Draft"}
+];
+const meta = {"Standard":{"MTGGoldfish":{"asOf":"2026-11-05","window":"Source snapshot · 5 Nov 2026","source":"MTGGoldfish","url":"https://www.mtggoldfish.com/metagame/standard/full","rows":[["Mono-Green Landfall",12.4],["Dimir Midrange",10.9],["Dimir Reanimator",8.8],["Lifegain",8],["Izzet Spellementals",7.9],["Azorius Control",6.4],["4c Control",5.1],["Jeskai Artifacts",4.9],["Izzet Prowess",3.6],["Boros Dragons",3.5],["Boros Dwarves",3.4],["Azorius Momo",3],["Rakdos Lizards",2.2],["Mono-Black Aggro",1.7],["Dimir Excruciator",1.4],["4c Reanimator",1.2],["Dimir Control",1.2],["Selesnya Landfall",1.2],["Jeskai Control",1.1],["Jund Sacrifice",1],["Mardu Discard",0.8],["Mono-Red Aggro",0.7],["Simic Landfall",0.6],["Boros Tokens",0.5],["Grixis Reanimator",0.4],["Izzet Maestro",0.4],["Golgari Midrange",0.4],["Sultai Control",0.4],["4c Kona",0.4],["Sultai Reanimator",0.4],["Gruul Delirium",0.3],["Temur Prowess",0.3],["Bant Airbending Combo",0.2],["Jeskai Momo",0.2],["Mardu Cat Pact",0.2],["Azorius Enchantments",0.2],["Azorius Tempo",0.2],["Selesnya Ouroboroid",0.2],["Temur Battlecrier Combo",0.2],["Temur Kona",0.2],["Selesnya Gearhulk",0.1],["Gruul Leyline Aggro",0.1],["Izzet Leyline Aggro",0.1],["Mono-Red Burn",0.1],["5c Control",0.1],["Mardu Control",0.1],["Selesnya Aggro",0.1],["Izzet Control",0.1],["Izzet Looting",0.1],["Boros Leyline Aggro",0.1],["4c Artifacts",0.1],["Boros Control",0.1],["Esper Reanimator",0.1],["Mono-Red Prowess",0.1],["Izzet Equipments",0.1],["Rakdos Reanimator",0.1],["Rakdos Aggro",0.1],["Boros Aggro",0.1],["5c Omniscience",0.1],["Selesnya Cage",0.1]]},"MTGDecks.net":{"asOf":"2026-11-08","window":"Source snapshot · 8 Nov 2026","sample":8432,"source":"MTGDecks.net","url":"https://mtgdecks.net/Standard","rows":[["Mono Green Landfall",null,null,null,52],["Dimir Midrange",null,null,null,53],["Jund Biotech",null,null,null,54],["Izzet Spellementals",null,null,null,48],["Orzhov Lifegain",null,null,null,51],["Dimir Uldaros",null,null,null,52],["Azorius Control",null,null,null,49],["4 Color Control",null,null,null,51],["Boros Dragons",null,null,null,49],["Jeskai Artifacts",null,null,null,56],["Boros Equipments",null,null,null,49],["Rogue",null,null,null,null],["Izzet Prowess",null,null,null,49],["Azorius Blink",null,null,null,52],["Dimir Excruciator",null,null,null,46],["Rakdos Lizards",null,null,null,46],["Sultai Reanimator",null,null,null,49],["Mardu Discard",null,null,null,46],["Boros Mobilize",null,null,null,50],["Golgari Midrange",null,null,null,41],["Selesnya Landfall",null,null,null,52],["Mono Black Aggro",null,null,null,43],["Mono-Red Aggro",null,null,null,37],["Dimir Control",null,null,null,50],["Izzet Aggro",null,null,null,44],["Azorius Flash",null,null,null,45],["Selesnya Gearhulk",null,null,null,50],["Grixis Reanimator",null,null,null,49],["Jeskai Lessons",null,null,null,54],["Temur Kona",null,null,null,52],["Jeskai Control",null,null,null,45],["Bant Airbending",null,null,null,53],["Jeskai Superfriends",null,null,null,41],["Izzet Opus",null,null,null,49],["Dimir Oculus",null,null,null,59],["Temur Battlecrier",null,null,null,60],["Sultai Control",null,null,null,37],["Simic Landfall",null,null,null,42],["Boros Superfriends",null,null,null,44],["Gruul Delirium",null,null,null,44],["Golgari Control",null,null,null,53],["Mardu Iroh",null,null,null,50],["Simic Kona",null,null,null,47],["Orzhov Sacrifice",null,null,null,35],["Selesnya Counters",null,null,null,50],["Mono Black Midrange",null,null,null,26],["Sultai Uldaros",null,null,null,63],["Izzet Elementals",null,null,null,55],["Big Red",null,null,null,53],["Naya Delirium",null,null,null,57],["Mono Red Leyline",null,null,null,45],["Jeskai Weapons",null,null,null,57],["Izzet Superfriends",null,null,null,25],["Izzet Lessons",null,null,null,37],["Dimir Skeletons",null,null,null,null],["Goblins",null,null,null,35],["Abzan Lifegain",null,null,null,13],["Sphinx's Approach",null,null,null,26],["Azorius Oculus",null,null,null,51],["Allies",null,null,null,57],["Mono White Lifegain",null,null,null,33],["Mono Blue Control",null,null,null,44],["Jund Superfriends",null,null,null,29],["Azorius Auras",null,null,null,14],["Rakdos Monument",null,null,null,60],["Golgari Graveyard",null,null,null,48],["Mono Black Skeletons",null,null,null,57],["Sultai Midrange",null,null,null,56],["Mono White Auras",null,null,null,17],["Mono White Angels",null,null,null,43],["4 Color Elementals",null,null,null,48],["Grixis Monument",null,null,null,42],["Boros Burn",null,null,null,25],["Gruul Leyline",null,null,null,12],["Rakdos Aggro",null,null,null,46],["Jund Delirium",null,null,null,46],["Esper Oculus",null,null,null,47],["Gruul Landfall",null,null,null,44],["Gruul Midrange",null,null,null,35],["Bant Omniscience",null,null,null,30],["Esper Control",null,null,null,13],["Bant Control",null,null,null,43],["Selesnya Midrange",null,null,null,29],["Mono Black Sacrifice",null,null,null,null],["Grixis Superfriends",null,null,null,55],["Azorius Aggro",null,null,null,29],["Azorius Tokens Control",null,null,null,29],["Mardu Control",null,null,null,50],["Rakdos Reanimator",null,null,null,54],["Orzhov Borgs",null,null,null,null],["Orzhov Aggro",null,null,null,27],["Temur Landfall",null,null,null,null],["Izzet Looting",null,null,null,50],["Mono Green Ramp",null,null,null,50],["Rakdos Carnage",null,null,null,50],["Izzet Equipments",null,null,null,38],["Rakdos Wizards",null,null,null,null],["Boros Bounce",null,null,null,null],["Selesnya Kona",null,null,null,54],["Abzan Pixie",null,null,null,53],["Mono White Tokens",null,null,null,38],["Boros Weapons",null,null,null,40],["Mono Blue Tempo",null,null,null,null],["Mono Black Discard",null,null,null,27],["Jund Midrange",null,null,null,33],["Jeskai Oculus",null,null,null,50],["Boros Improvisation",null,null,null,null],["Izzet Weapons",null,null,null,null],["Bant Surprise",null,null,null,47],["4 Color Reanimator",null,null,null,31],["Esper Uldaros",null,null,null,55],["Izzet Pirates",null,null,null,null],["Selesnya Cage",null,null,null,null],["Jeskai Aggro",null,null,null,30],["Rakdos Klingons",null,null,null,null],["4 Color Artifacts",null,null,null,null],["Temur Ouroboroid",null,null,null,null],["Elves",null,null,null,33],["Naya Spiders",null,null,null,null],["Dimir Doom",null,null,null,null],["Boros Control",null,null,null,null],["Jeskai Opus",null,null,null,64],["Azorius Pixie",null,null,null,null],["Jeskai Equipments",null,null,null,null]]}},"Modern":{"MTGGoldfish":{"asOf":"2026-11-08","window":"Source snapshot · 8 Nov 2026","source":"MTGGoldfish","url":"https://www.mtggoldfish.com/metagame/modern/full","rows":[["Eldrazi Ramp",10.3],["Izzet Prowess",7.2],["Affinity",6.6],["Domain Zoo",5.9],["Boros Energy",5.6],["Esper Blink",5.2],["Eldrazi",4.8],["Jeskai Energy",4],["Azorius Control",3.9],["Amulet Titan",3.7],["Rakdos Midrange",3.7],["Goryo's Vengeance",3.4],["Ruby Storm",3.3],["Mono-Green Basking Broodscale Combo",2.6],["Eldrazi Tron",2.1],["Tron",2],["Dimir Midrange",2],["Living End",0.6],["Neobrand",1.5],["Yawgmoth",1.4],["Belcher",1.2],["Boros Ponza",1],["Mono-Green Eldrazi",0.9],["Grixis Reanimator",0.8],["Dimir Murktide",0.8],["Mono-Black Midrange",0.7],["Boros Burn",0.7],["Indomitable Creativity",0.6],["Izzet Murktide",0.6],["Temur Prowess",0.5],["Devoted Combo",0.5],["4c HollowOne",0.5],["Hammer Time",0.5],["Grixis Control",0.4],["The Rock",0.4],["Death's Shadow",0.3],["Esper Reanimator",0.3],["Azorius Blink",0.3],["Generic Ragavan",0.3],["Merfolk",0.3],["Jeskai Prowess",0.2],["Izzet Steel-Cutter",0.2],["Grixis Midrange",0.2],["Song of Creation",0.2],["4c Midrange",0.2],["Selesnya Midrange",0.2],["Titan Shift",0.2],["Bant Midrange",0.2],["Gruul Basking Broodscale Combo",0.2],["Through the Breach",0.2],["Sultai Midrange",0.2],["Mill",0.2],["Rakdos Aggro",0.2],["Bant Blink",0.2],["Sam Combo",0.1],["5c Midrange",0.1],["Jeskai Blink",0.1],["Rakdos HollowOne",0.1],["Esper Midrange",0.1]]},"MTGDecks.net":{"asOf":"2026-11-08","window":"Source snapshot · 8 Nov 2026","sample":19041,"source":"MTGDecks.net","url":"https://mtgdecks.net/Modern","rows":[["Eldrazi Bloodchief Combo",null,null,null,54],["Izzet Prowess",null,null,null,48],["Esper Blink",null,null,null,50],["Esper Reanimator",null,null,null,48],["Izzet Affinity",null,null,null,52],["Boros Energy",null,null,null,51],["Domain Aggro",null,null,null,49],["Rakdos Moonshadow",null,null,null,55],["Devoted Druid Combo",null,null,null,49],["Azorius Control",null,null,null,54],["Amulet Titan",null,null,null,51],["Ruby Storm",null,null,null,50],["Dimir Frog",null,null,null,48],["Eldrazi Tron",null,null,null,49],["Living End",null,null,null,51],["Prison Tron",null,null,null,48],["Boros Wildfire",null,null,null,47],["Rogue",null,null,null,null],["Neoform",null,null,null,47],["Eldrazi Trudge",null,null,null,47],["Jeskai Control",null,null,null,51],["Jeskai Blink",null,null,null,48],["Jeskai Ocelot",null,null,null,48],["Tameshi Belcher",null,null,null,51],["Grixis Reanimator",null,null,null,47],["Hollow One",null,null,null,48],["Eldrazi Ramp",null,null,null,47],["Burn",null,null,null,46],["Izzet Murktide",null,null,null,49],["Dimir Control",null,null,null,43],["Mono Blue Tron",null,null,null,41],["4 Color Ritual",null,null,null,53],["Samwise Combo",null,null,null,52],["Golgari Necrodominance",null,null,null,46],["Golgari Yawgmoth",null,null,null,43],["Grinding Emry",null,null,null,52],["Cosmogoyf Combo",null,null,null,45],["Indomitable Creativity",null,null,null,49],["Azorius Blink",null,null,null,43],["Izzet Metalcraft",null,null,null,48],["Esper Ketramose Frog",null,null,null,54],["Mill",null,null,null,36],["Bant Ritual",null,null,null,44],["Hammer Time",null,null,null,50],["Grixis Metalcraft",null,null,null,59],["Grixis Control",null,null,null,42],["Golgari Sacrifice",null,null,null,41],["Hexhaven Valakut",null,null,null,48],["Merfolk",null,null,null,37],["Eldrazi Breach",null,null,null,42],["Simic Ritual",null,null,null,44],["Red Belcher",null,null,null,47],["Eldrazi Aggro",null,null,null,50],["Mardu Energy",null,null,null,51],["Grixis Frog",null,null,null,45],["Temur Song",null,null,null,39],["Mono Black Bones",null,null,null,55],["Dredge",null,null,null,40],["Mono Black Necrodominance",null,null,null,47],["Orzhov Blink",null,null,null,56],["4 Color Omnath",null,null,null,42],["Jund Sacrifice",null,null,null,57],["Dimir Reanimator",null,null,null,59],["Rakdos Channeler",null,null,null,36],["Selesnya Ritual",null,null,null,55],["Soultrader",null,null,null,37],["Izzet Storm",null,null,null,36],["Crabvine",null,null,null,51],["Jeskai Affinity",null,null,null,55],["Izzet Control",null,null,null,43],["Mardu Blink",null,null,null,44],["Jund Saga",null,null,null,41],["Mono Green Landfall",null,null,null,44],["Grixis Death's Shadow",null,null,null,47],["Jeskai Ascendancy",null,null,null,53],["Splinter Twin",null,null,null,64],["Bant Ephemerate",null,null,null,33],["Esper Frog",null,null,null,41],["Infect",null,null,null,44],["Temur Cascade",null,null,null,28],["Dimir Death's Shadow",null,null,null,45],["Mono Black Reanimator",null,null,null,38],["Rakdos Burn",null,null,null,43],["Jund Cookbook",null,null,null,50],["Mono Green Tron",null,null,null,30],["Domain Cascade",null,null,null,49],["Dryad Valakut",null,null,null,30],["Thopter Control",null,null,null,49],["Kethis Combo",null,null,null,54],["Rakdos Cookbook",null,null,null,24],["Rakdos Prowess",null,null,null,46],["Bant Reclamation",null,null,null,46],["Golgari Moonshadow",null,null,null,31],["Calibrated Blast",null,null,null,29],["Domain Living End",null,null,null,44],["Esper Control",null,null,null,44],["Gruul Midrange",null,null,null,43],["Jund Creativity",null,null,null,57],["Azorius Affinity",null,null,null,50],["Jeskai Prowess",null,null,null,52],["Temur Weapons",null,null,null,null],["GW Auras",null,null,null,null],["Mono Red Prowess",null,null,null,36],["Hardened Scales",null,null,null,53],["Mono Black Coffers",null,null,null,22],["Azorius Stoneblade",null,null,null,61],["Temur Tempo",null,null,null,null],["Izzet Phoenix",null,null,null,56],["Mono Black Saga",null,null,null,null],["Heliod Company",null,null,null,29],["Lantern Control",null,null,null,14],["Mono Black Rack",null,null,null,43],["Cragganwick Shoot",null,null,null,31],["Martyr Life",null,null,null,null],["Sultai Death's Shadow",null,null,null,null],["Humans",null,null,null,42],["Elves",null,null,null,50],["Gruul Prowess",null,null,null,25],["Jeskai Wildfire",null,null,null,57],["Mono White Control",null,null,null,29],["Dimir Unearth",null,null,null,20],["Sultai Phoenix",null,null,null,14],["Jeskai Gifts",null,null,null,46],["Grixis Wizards",null,null,null,43],["Goblins",null,null,null,null]]}},"Legacy":{"MTGGoldfish":{"asOf":"2026-11-08","window":"Source snapshot · 8 Nov 2026","source":"MTGGoldfish","url":"https://www.mtggoldfish.com/metagame/legacy/full","rows":[["Dimir Tempo",7],["Izzet Delver",6.9],["Boros Energy",5.9],["Hogaak Tempo",5.6],["Doomsday",5.5],["Lands",5.1],["Beanstalk Control (Non-Yorion)",5.1],["Aluren",4.7],["Sneak and Show",4.3],["Eldrazi",4.2],["Mystic Forge Combo",3.8],["Death and Taxes (Yorion) - Black/White",3.8],["Sewer-Cam Combo",3.3],["Rakdos Reanimator",2.3],["The EPIC Storm",2],["Tron",2],["Elves",1.7],["Mardu Energy",1.3],["Jeskai Control",1.3],["Azorius Tempo",0.5],["Red Stompy",1],["Jeskai Tempo",1],["Omni-Tell",0.9],["LED Dredge",0.9],["Hogaak Moonshadow",0.8],["Cephalid Breakfast",0.8],["Stiflenought",0.8],["Selesnya Depths",0.7],["Naya Initiative",0.7],["Painter",0.6],["Creative Technique",0.6],["Beanstalk Control (Yorion)",0.6],["Affinity Stompy",0.6],["Saga Storm",0.6],["Maverick",0.5],["Esper Control",0.5],["Beseech Storm",0.5],["Mono Black Midrange",0.5],["Cradle Control",0.4],["Burn",0.4],["Grixis Control",0.4],["Azorius Control",0.4],["Death and Taxes (Yorion) - Mono White",0.4],["Goblins",0.4],["Oops! All Spells",0.3],["Green Cloudpost",0.3],["Loam Pox",0.3],["Reanimator",0.3],["Nic Fit",0.3],["Blue Artifacts",0.3],["Dimir Control",0.3],["Necrodominance Combo",0.3],["Helm/Leyline Stompy",0.3],["Death's Shadow",0.2],["Ninjas",0.2],["Sultai Depths",0.2],["Azorius Stoneblade",0.2],["Jund",0.2],["Blue Cloudpost",0.2]]},"MTGDecks.net":{"asOf":"2026-11-06","window":"Source snapshot · 6 Nov 2026","sample":7399,"source":"MTGDecks.net","url":"https://mtgdecks.net/Legacy","rows":[["Dimir Moonshadow",null,null,null,52],["Boros Ocelot",null,null,null,53],["Izzet Cutter",null,null,null,49],["Lands.dec",null,null,null,52],["Eldrazi Stompy",null,null,null,46],["Doomsday",null,null,null,54],["Azorius Blink",null,null,null,50],["Rogue",null,null,null,null],["Aluren",null,null,null,53],["Sneak and Show",null,null,null,53],["Mono Blue Tron",null,null,null,52],["Reanimator",null,null,null,46],["Dimir Tempo",null,null,null,44],["Death & Taxes",null,null,null,50],["Goblin Welder",null,null,null,57],["Bant Beanstalk",null,null,null,52],["Beseech Storm",null,null,null,49],["Mystic Forge Combo",null,null,null,52],["UWx Control",null,null,null,48],["Elves",null,null,null,55],["Tron",null,null,null,50],["Show and Tell",null,null,null,46],["Hogaak",null,null,null,50],["Cradle Control",null,null,null,57],["Mardu Ocelot",null,null,null,49],["Domain Beanstalk",null,null,null,46],["Mono Red Prison",null,null,null,48],["Cephalid Breakfast",null,null,null,47],["Affinity",null,null,null,44],["Painter Grindstone",null,null,null,47],["UWx Stoneblade",null,null,null,44],["Mono Black",null,null,null,47],["Stiflenought",null,null,null,40],["Dredge",null,null,null,48],["Oops! All Spells",null,null,null,44],["Esper Tempo",null,null,null,47],["Creative Technique",null,null,null,58],["GWx Depths",null,null,null,54],["Maverick",null,null,null,53],["Goblins",null,null,null,25],["Grixis Tempo",null,null,null,41],["Naya Initiative",null,null,null,54],["Ninjas",null,null,null,48],["MUD",null,null,null,43],["Boros Initiative",null,null,null,34],["Green Post",null,null,null,41],["Burn",null,null,null,35],["BUG",null,null,null,45],["Ruby Storm",null,null,null,51],["Nic Fit",null,null,null,45],["Blue Cloudpost",null,null,null,54],["Smallpox",null,null,null,34],["Mono White Initiative",null,null,null,48],["Infect",null,null,null,39],["Necro Storm",null,null,null,58],["Merfolk",null,null,null,57],["Jeskai Wizards",null,null,null,36],["UBx Death's Shadow",null,null,null,44],["Mono Black Necro",null,null,null,null],["Mind's Desire",null,null,null,42],["UR Tempo",null,null,null,39],["Mono Black Helm",null,null,null,28],["UW Tempo",null,null,null,33],["Loam Pox",null,null,null,48],["Orzhov Blink",null,null,null,null],["TEG",null,null,null,40],["Temur Cascade",null,null,null,null],["Mono Blue Tempo",null,null,null,null],["Azorius Ocelot",null,null,null,53],["Dark Depths",null,null,null,5],["Living End",null,null,null,36],["Mono Blue Jewel",null,null,null,null],["Rakdos Goyfs",null,null,null,28],["Mono Black Prison",null,null,null,47],["Sultai Ritual",null,null,null,null],["Esper Blink",null,null,null,57],["Golgari Maverick",null,null,null,null],["Belcher",null,null,null,null],["Sultai Beanstalk",null,null,null,47],["Jeskai Phelia",null,null,null,null],["UWx Helm",null,null,null,null],["Mono White Prison",null,null,null,null],["Displacer Combo",null,null,null,null],["Gruul Lumberjack",null,null,null,29],["Bant Order",null,null,null,null],["8 Mulch",null,null,null,42],["Gruul Initiative",null,null,null,null],["Food Chain",null,null,null,null],["Gruul Shoal",null,null,null,null],["Ensoul Artifacts",null,null,null,null],["Paradoxical Outcome",null,null,null,null],["Sneak Attack",null,null,null,null],["Sultai Tempo",null,null,null,null],["Devoted Reconfiguration",null,null,null,67],["Mono White Blink",null,null,null,null],["Jeskai Murktide",null,null,null,null],["Rakdos Moonshadow",null,null,null,29],["Bant Blink",null,null,null,null],["Enchantress",null,null,null,22],["Simic Order",null,null,null,null],["Temur Tempo",null,null,null,67],["Mono Black Dauthi",null,null,null,null],["Stryfo Pile",null,null,null,null],["Esper Vial",null,null,null,null],["Thassa's Paradigm",null,null,null,50],["4 Color Loam",null,null,null,43],["Humans",null,null,null,33],["4 Color Beanstalk",null,null,null,67],["Mono White Helm",null,null,null,null],["Grixis Phoenix",null,null,null,null]]}}};
+meta["7-Point Highlander"] = {"TopDeck.gg":{window:"13 May – 5 Nov 2026",asOf:"2026-11-05",sample:42,source:"TopDeck.gg",url:"https://chronocore.topdeck.gg/metagame/magic-the-gathering/7pt-highlander",rows:[["Storm",16.7,null,null,48.6],["RB Aggro",14.3,null,null,42.9],["Hot BUG Walkers",11.9,null,null,55.6],["Thoracle",11.9,null,null,63.3],["Jund Initiative",7.1],["Izzet Wizards",4.8],["Mardu",4.8],["Mono Black",4.8]]}};
+</script>
+<script>
+"use strict";
+
+const zone = "Australia/Brisbane";
+const app = document.querySelector("#app");
+const editor = document.querySelector("#editor");
+const key = "mana-radar-v1";
+const escapeText = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[ch]);
+const safeUrl = value => {
+  try { const url = new URL(value); return url.protocol === "https:" ? url.href : ""; }
+  catch { return ""; }
+};
+const link = (url,label,cls="button") => safeUrl(url) ? '<a class="'+cls+'" target="_blank" rel="noopener noreferrer" href="'+escapeText(safeUrl(url))+'">'+escapeText(label)+'</a>' : "";
+const dateFormat = (value,options) => new Intl.DateTimeFormat("en-AU",{timeZone:zone,...options}).format(new Date(value));
+const isoLocal = value => new Intl.DateTimeFormat("sv-SE",{timeZone:zone,year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(value));
+const today = () => isoLocal(Date.now());
+const eventDate = item => item.date || isoLocal(item.start);
+const localDate = date => date+"T12:00:00+10:00";
+const dayText = value => dateFormat(value,{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+const timeText = value => dateFormat(value,{hour:"numeric",minute:"2-digit"});
+const button = (label,action,id="",primary=false) => '<button type="button" class="button'+(primary?" primary":"")+'" data-action="'+action+'" data-id="'+escapeText(id)+'">'+escapeText(label)+'</button>';
+const options = (values,selected) => values.map(value=>'<option'+(value===selected?" selected":"")+'>'+escapeText(value)+'</option>').join("");
+const fmt = n => Number(n).toLocaleString("en-AU");
+const delta = value => value == null ? "—" : (value > 0 ? "+" : "")+value.toFixed(1)+" pp";
+const normalize = str => str.toLowerCase().replace(/[^a-z0-9]+/g,"");
+let state = {decks:[], customEvents:[], snapshots:{}};
+try {
+  const saved = JSON.parse(localStorage.getItem(key));
+  if (saved) state = {...state,...saved};
+} catch {}
+let scope = "local";
+const eventCategories = ["Competitive","Casual"];
+const eventCategory = item => item.category || "Competitive";
+let category = "Competitive";
+let filter = "All formats";
+let metaFormat = "Standard";
+let metaSource = "MTGGoldfish";
+let metaExpanded = false;
+let saveMessage = "";
+function persist(next) {
+  try {
+    localStorage.setItem(key,JSON.stringify(next));
+    state = next;
+    saveMessage = "";
+    return true;
+  } catch {
+    saveMessage = "Your browser could not save this change.";
+    return false;
+  }
+}
+
+function calendarUrl(item) {
+  const utc = value => new Date(value).toISOString().replace(/[-:]/g,"").replace(/\.\d+Z/,"Z");
+  const compact = value => value.replace(/-/g,"");
+  const nextDay = value => new Date(Date.parse(value+"T00:00:00Z")+86400000).toISOString().slice(0,10);
+  const estimated = item.start && !item.end;
+  const dates = item.start
+    ? utc(item.start)+"/"+utc(item.end || Date.parse(item.start)+3600000)
+    : compact(item.date)+"/"+compact(nextDay(item.through || item.date));
+  const details = [
+    item.format, item.note, estimated ? "The calendar uses a one-hour placeholder. End time has not been published." : "",
+    !item.start ? "Dates shown are event-local. Start time has not been published." : "",
+    item.url, item.stream ? "Stream: "+item.stream : ""
+  ].filter(Boolean).join("\n");
+  return "https://calendar.google.com/calendar/render?"+new URLSearchParams({action:"TEMPLATE",text:item.title,dates,ctz:zone,location:item.venue,details});
+}
+
+function eventCard(item) {
+  const first = item.start || localDate(item.date);
+  const last = item.through && item.through !== item.date ? " – "+dayText(localDate(item.through)) : "";
+  const when = item.start
+    ? dayText(first)+" · "+timeText(first)+(item.end ? " – "+timeText(item.end) : "")+" AEST"
+    : dayText(first)+last+" · Event-local dates · Time TBA";
+  return '<article class="event"><div class="date" aria-hidden="true"><span class="num">'+dateFormat(first,{month:"short"})+'</span><strong>'+dateFormat(first,{day:"numeric"})+'</strong></div>'+
+    '<div><div class="tags"><span class="tag">'+escapeText(item.format)+'</span><span class="tag alt">'+escapeText(item.kind)+'</span></div><h3>'+escapeText(item.title)+'</h3>'+
+    '<p class="muted small">'+escapeText(item.venue)+'<br>'+escapeText(when)+(item.note ? '<br>'+escapeText(item.note) : "")+
+    (item.scope==="major" && !item.stream ? '<br>Stream TBA' : "")+'</p><div class="actions">'+
+    link(item.url,item.scope==="local"?"Event / registration ↗":"Event details ↗")+
+    link(item.stream,(item.streamLabel || (item.custom ? "Stream" : "Official stream channel"))+" ↗",item.start?"button primary":"button")+
+    link(calendarUrl(item),"+ Google Calendar")+(item.custom ? button("Edit","event",item.id) : "")+'</div></div></article>';
+}
+
+const scanPanel = document.querySelector("#scan-panel");
+const scanStatus = document.querySelector("#scan-status");
+const scanItems = document.querySelector("#scan-items");
+const dateKey = value => /^\d{4}-\d{2}-\d{2}$/.test(value ?? "") && Number.isFinite(Date.parse(value));
+function readScheduledScan() {
+  try {
+    const scan = JSON.parse(document.querySelector("#brisbane-scheduled-scan").textContent);
+    const valid = new Map();
+    for (const event of scan.events) {
+      if (event.scope!=="local" || event.category!=="Competitive" ||
+          typeof event.id!=="string" || !event.id || typeof event.title!=="string" || !event.title ||
+          typeof event.venue!=="string" || !event.venue || !formats.includes(event.format) ||
+          !dateKey(event.discoveredOn) || !safeUrl(event.url) ||
+          !(event.start ? Number.isFinite(Date.parse(event.start)) : dateKey(event.date))) continue;
+      if (event.end && (!event.start || !Number.isFinite(Date.parse(event.end)) || Date.parse(event.end)<Date.parse(event.start))) continue;
+      valid.set(event.id,{...event,through:undefined,scope:"local",category:"Competitive"});
+    }
+    return {lastScan:dateKey(scan.lastScan)?scan.lastScan:null,events:[...valid.values()]};
+  } catch { return {lastScan:null,events:[]}; }
+}
+const scheduledScan = readScheduledScan();
+function isUpcoming(item,now) {
+  return item.start ? (item.end ? Date.parse(item.end)>=now : eventDate(item)>=isoLocal(now)) : (item.through||item.date)>=isoLocal(now);
+}
+function showScheduledNews(now) {
+  scanPanel.hidden = scope!=="local";
+  if (scanPanel.hidden) return;
+  const upcoming = scheduledScan.events.filter(item=>isUpcoming(item,now)).sort((a,b)=>
+    b.discoveredOn.localeCompare(a.discoveredOn) || eventDate(a).localeCompare(eventDate(b)));
+  scanStatus.textContent = scheduledScan.lastScan
+    ? (upcoming.length ? "Last scan " : "No new upcoming events. Last scan ")+dayText(localDate(scheduledScan.lastScan))+"."
+    : "New competitive events will appear after the first midnight scan.";
+  scanItems.innerHTML = upcoming.map(item=>{
+    const when = item.start ? dayText(item.start)+" · "+timeText(item.start)+" AEST" : dayText(localDate(item.date))+" · Time TBA";
+    return "<li>"+link(item.url,item.title,"")+
+      '<p class="muted">'+escapeText(item.format+" · "+item.venue)+"<br>"+escapeText(when)+
+      "<br>Added "+escapeText(dayText(localDate(item.discoveredOn)))+"</p></li>";
+  }).join("");
+}
+
+function showEvents() {
+  const now = Date.now();
+  showScheduledNews(now);
+  const listings = [...events,...scheduledScan.events,...state.customEvents]
+    .filter(item=>item.scope===scope && (scope==="major" || eventCategory(item)===category) &&
+      (filter==="All formats" || item.format===filter) &&
+      isUpcoming(item,now))
+    .sort((a,b)=>(a.start||localDate(a.date)).localeCompare(b.start||localDate(b.date)));
+  const filterRow = (label="") => {
+    const pills = ["All formats",...formats].map(format=>{
+      const pressed = filter===format && (!label || category===label);
+      return '<button type="button" class="pill" aria-pressed="'+pressed+'" data-action="filter" data-category="'+label+'" data-id="'+format+'">'+format+'</button>';
+    }).join("");
+    return '<div class="filters" role="group" aria-label="'+(label ? label+" formats" : "Format")+'">'+
+      (label ? '<span class="filter-label">'+label+'</span>' : "")+'<div class="filter-pills">'+pills+'</div></div>';
+  };
+  const filters = scope==="local" ? eventCategories.map(filterRow).join("") : filterRow();
+  const resultType = scope==="local" ? category.toLowerCase()+" " : "";
+  app.innerHTML = '<div class="heading"><div><p class="eyebrow">01 / Event tracker</p><h2>Upcoming events</h2></div><div class="switch" aria-label="Event region">'+
+    '<button type="button" class="button" data-action="scope" data-id="local" aria-pressed="'+(scope==="local")+'">Brisbane</button>'+
+    '<button type="button" class="button" data-action="scope" data-id="major" aria-pressed="'+(scope==="major")+'">Major events</button>'+button("+ Add event","event")+'</div></div>'+
+    '<div class="filter-list">'+filters+'</div><div class="grid"><section class="stack" aria-label="Event results"><p class="small muted" aria-live="polite">'+listings.length+' upcoming '+resultType+(listings.length===1?"event":"events")+'</p>'+
+    (listings.map(eventCard).join("") || '<div class="empty"><h3>No verified upcoming '+resultType+(filter==="All formats"?"":escapeText(filter)+" ")+'listings in this view</h3><p class="muted">Try another filter or add an event from an organiser.</p>'+button("+ Add event","event")+'</div>')+'</section>'+
+    '<aside class="stack"><section class="panel"><p class="eyebrow">Sources</p><h3>'+ (scope==="local"?"Brisbane organisers":"Coverage & schedules")+'</h3><ul>'+
+    (scope==="local"
+      ? '<li>'+link("https://vaultgames.com.au/collections/brisbane-events","Vault Games ↗","")+'</li><li>'+link("https://playmantis.com.au/collections/events","Playmantis ↗","")+'</li><li>'+link("https://www.mtgmate.com.au/pages/events","MTG MATE ↗","")+'</li><li>'+link("https://raptorgames.com/pages/weekly-magic-the-gathering-standard-tournaments-brisbane","Raptor Games ↗","")+'</li><li>'+link("https://locator.wizards.com/","Wizards Store & Event Locator ↗","")+'</li><li>'+link("https://tavernfinder.com/en/events/near/au/brisbane","Tavern Finder Brisbane ↗","")+'</li>'
+      : '<li>'+link("https://magic.gg/schedule","Wizards tournament schedule ↗","")+'</li><li>'+link("https://anzmtg.com.au/special-events/","ANZ Super Series ↗","")+'</li><li>'+link("https://www.youtube.com/@playmtg","Play MTG on YouTube ↗","")+'</li>')+
+    '</ul></section><section class="panel"><p class="eyebrow">Calendar</p><p class="muted small">Google Calendar opens a prefilled event for you to save. Dates without times are added as all-day entries. Timed events without a published finish use a one-hour placeholder.</p><p class="muted small">Listings were checked 8 Nov 2026 against organiser calendars, booking pages and mirrored Wizards listings. Check event details for changes.</p></section></aside></div>';
+}
+
+function snapshots(format) {
+  const saved = state.snapshots[format] || [];
+  return [...saved,...Object.values(meta[format])].sort((a,b)=>b.asOf.localeCompare(a.asOf));
+}
+function sourceOptions(format) {
+  const sources = Object.keys(meta[format]);
+  if (state.snapshots[format]?.length) sources.push("Saved snapshots");
+  return sources;
+}
+function currentSnapshot(format) {
+  const sources = sourceOptions(format);
+  const source = sources.includes(metaSource) ? metaSource : sources[0];
+  return source==="Saved snapshots"
+    ? snapshots(format).find(snapshot=>state.snapshots[format].includes(snapshot))
+    : meta[format][source];
+}
+const aliases = {
+  Standard:{ "4ccontrol":"4colorcontrol",lifegain:"orzhovlifegain" },
+  Modern:{ domainaggro:"domainzoo" },
+  Legacy:{ borosocelot:"borosenergy",landsdec:"lands" }
+};
+function archetypeKey(format,name) {
+  const key = normalize(name) || name.toLowerCase();
+  return aliases[format]?.[key] || key;
+}
+function archetypeNames(format) {
+  const own = state.decks.filter(deck=>deck.format===format).map(deck=>deck.archetype);
+  const extra = format==="7-Point Highlander"
+    ? ["Izzet Control","Value Midrange","Mox Aggro","Good-stuff Control"] : [];
+  const names = [...snapshots(format).flatMap(snapshot=>snapshot.rows.map(row=>row[0])),...extra,...own];
+  return [...new Set(names)].sort((a,b)=>a.localeCompare(b));
+}
+function statsFor(matches) {
+  const record = {W:0,L:0,D:0};
+  matches.forEach(match=>record[match.result]++);
+  return {text:[record.W,record.L,record.D].join("–"),rate:matches.length ? (100*record.W/matches.length).toFixed(1)+"%" : "—"};
+}
+function comparison(deck) {
+  const all = snapshots(deck.format);
+  const current = currentSnapshot(deck.format);
+  const target = archetypeKey(deck.format,deck.archetype);
+  const row = current.rows.find(item=>archetypeKey(deck.format,item[0])===target);
+  const groups = new Map();
+  deck.matches.forEach(match=>{
+    const id = archetypeKey(deck.format,match.opponent);
+    if (!groups.has(id)) groups.set(id,[]);
+    groups.get(id).push(match);
+  });
+  const matchupRows = [...groups.values()].sort((a,b)=>b.length-a.length).map(group=>{
+    const opponent = group[0].opponent;
+    const published = current.rows.find(item=>archetypeKey(deck.format,item[0])===archetypeKey(deck.format,opponent));
+    const record = statsFor(group);
+    return '<tr><td>'+escapeText(opponent)+'</td><td>'+record.text+'</td><td>'+record.rate+'</td><td>'+(published?.[1]!=null?published[1]+"%":"—")+'</td></tr>';
+  }).join("");
+  const trends = all.map(snap=>{
+    const entry = snap.rows.find(item=>item[1]!=null && archetypeKey(deck.format,item[0])===target);
+    return entry ? '<tr><td>'+escapeText(snap.window)+'</td><td>'+entry[1]+'%</td><td>'+escapeText(snap.source)+'</td></tr>' : "";
+  }).join("");
+  return {current,row,matchupRows,trends};
+}
+function deckCard(deck) {
+  const {current,row,matchupRows,trends} = comparison(deck);
+  const sortedMatches = [...deck.matches].sort((a,b)=>b.date.localeCompare(a.date));
+  const record = statsFor(sortedMatches);
+  const recent = statsFor(sortedMatches.slice(0,10));
+  const list = deck.list ? '<details><summary>Decklist</summary><pre>'+escapeText(deck.list)+'</pre></details>' : "";
+  return '<article class="deck"><div class="heading"><div><div class="tags"><span class="tag">'+escapeText(deck.format)+'</span></div><h3>'+escapeText(deck.name)+'</h3>'+
+    '<p class="muted small">'+escapeText(deck.archetype)+'</p></div><div class="actions">'+button("Edit","deck",deck.id)+button("+ Log match","match",deck.id,true)+'</div></div>'+
+    '<div class="stats"><div class="stat"><strong>'+record.text+'</strong><span>Your W–L–D</span></div><div class="stat"><strong>'+record.rate+'</strong><span>Your win rate</span></div>'+
+    '<div class="stat"><strong>'+(row?.[1]!=null ? row[1]+"%" : row?.[4]!=null ? row[4]+"%" : "—")+'</strong><span>'+(current.source==="MTGDecks.net"?"Published win rate":"Published list share")+'</span></div></div>'+
+    '<p class="small muted">Last '+Math.min(sortedMatches.length,10)+' matches: '+recent.text+' · '+recent.rate+'</p>'+
+    '<p class="small muted">'+(row ? escapeText(current.window+" · "+current.source)+(row[2]!=null?" · "+delta(row[2])+" vs prior 30 days":"")+(row[3]!=null?" · "+row[3]+" published top cuts":"")+(row[1]!=null && row[4]!=null?" · "+row[4]+"% source win rate":"") : "Archetype absent from this snapshot. Edit your deck to match a source archetype or add a snapshot that includes it.")+'</p>'+
+    (matchupRows ? '<details open><summary>Matchups against the meta</summary><div class="table-wrap"><table><thead><tr><th>Opponent</th><th>W–L–D</th><th>Your win %</th><th>List share</th></tr></thead><tbody>'+matchupRows+'</tbody></table></div></details>' : "")+
+    (trends ? '<details><summary>Archetype history</summary><div class="table-wrap"><table><thead><tr><th>Window</th><th>List share</th><th>Source</th></tr></thead><tbody>'+trends+'</tbody></table></div></details>' : "")+
+    (sortedMatches.length ? '<details><summary>Match log ('+sortedMatches.length+')</summary><div class="table-wrap"><table><thead><tr><th>Date</th><th>Opponent</th><th>Result</th><th>Event</th><th><span class="visually-hidden">Edit result</span></th></tr></thead><tbody>'+
+      sortedMatches.map(match=>'<tr><td>'+escapeText(match.date)+'</td><td>'+escapeText(match.opponent)+'</td><td>'+match.result+'</td><td>'+escapeText(match.event)+'</td><td>'+button("Edit","match",deck.id+"/"+match.id)+'</td></tr>').join("")+'</tbody></table></div></details>' : "")+list+'</article>';
+}
+function showDecks() {
+  const current = currentSnapshot(metaFormat);
+  const max = Math.max(1,...current.rows.map(row=>row[1] ?? 0));
+  const owned = new Set(state.decks.filter(deck=>deck.format===metaFormat).map(deck=>archetypeKey(metaFormat,deck.archetype)));
+  const limit = Math.min(50,current.rows.length);
+  const rows = current.rows.slice(0,metaExpanded?limit:10).map((row,index)=>{
+    const yours = owned.has(archetypeKey(metaFormat,row[0]));
+    const value = row[1]!=null ? row[1]+"% share" : row[4]!=null ? row[4]+"% WR" : "—";
+    return '<div class="meta-row'+(yours?' meta-owned':'')+'"><span>'+escapeText((index+1)+". "+row[0])+
+      (yours?'<br><span class="tag">Your deck</span>':'')+'</span><b class="meta-value small">'+value+'</b>'+
+      (row[1]!=null?'<div class="bar" aria-hidden="true"><span style="width:'+100*row[1]/max+'%"></span></div>':'')+'</div>';
+  }).join("");
+  const expand = limit>10
+    ? '<button type="button" class="button meta-expand" data-action="expand-meta" aria-controls="meta-rankings" aria-expanded="'+metaExpanded+'">'+(metaExpanded?'Show top 10':'Expand to top '+limit)+'</button>' : "";
+  const sourceLinks = Object.values(meta[metaFormat]).map(source=>link(source.url,source.source+" ↗")).join("");
+  const activeSource = sourceOptions(metaFormat).includes(metaSource) ? metaSource : sourceOptions(metaFormat)[0];
+  const coverage = current.source==="MTGDecks.net"
+    ? "Ranked in the source’s order. WR is the published match win rate."
+    : "Share is the percentage of published lists in this source’s sample.";
+  app.innerHTML = '<div class="heading"><div><p class="eyebrow">02 / Deck tracker</p><h2>Your decks</h2></div>'+button("+ Add deck","deck","",true)+'</div><div class="grid">'+
+    '<section class="stack" aria-label="Saved decks">'+(state.decks.map(deckCard).join("") || '<div class="empty"><h3>Start with a deck you play</h3><p class="muted">Save your list and archetype, then log matches to see where your results are strong and which popular matchups need more games.</p>'+button("+ Add your first deck","deck","",true)+'</div>')+
+    '<p class="small muted">Decks and match logs are saved in this browser. Your win rate is wins divided by all logged matches, including draws.</p></section>'+
+    '<aside class="panel"><p class="eyebrow">Metagame snapshot</p><h3>What’s being played</h3><div class="meta-tools">'+
+    '<label>Format<select id="meta-format">'+options(formats,metaFormat)+'</select></label>'+
+    '<label>Source<select id="meta-source">'+options(sourceOptions(metaFormat),activeSource)+'</select></label></div>'+
+    '<p class="muted small">'+escapeText(current.window)+(current.sample?" · "+fmt(current.sample)+" published lists":"")+'</p>'+
+    '<div id="meta-rankings">'+rows+'</div>'+expand+
+    '<p class="small muted">'+coverage+' Open a source for its live rankings.</p><div class="actions">'+sourceLinks+button("Add snapshot","snapshot")+'</div></aside></div>';
+}
+function render() {
+  const decks = location.hash === "#decks";
+  document.querySelectorAll(".nav a").forEach(a=>{
+    const active = a.hash === (decks?"#decks":"#events");
+    if (active) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");
+  });
+  document.querySelector("#hero-label").textContent = decks ? "Deck tracker / Match results" : "Magic: The Gathering / Event tracker";
+  document.querySelector("#hero-title").textContent = decks ? "Deck Tracker" : "Magic Dash";
+  document.querySelector("#hero-copy").textContent = decks
+    ? "Track your results against the decks people are bringing to tournaments."
+    : "Find your next Brisbane tournament or catch the biggest matches live from home.";
+  if (decks) {
+    scanPanel.hidden = true;
+    showDecks();
+  } else showEvents();
+}
+const input = (label,name,value="",type="text",attrs="")=>'<label>'+label+'<input type="'+type+'" name="'+name+'" value="'+escapeText(value)+'" '+attrs+'></label>';
+const select = (label,name,values,value)=>'<label>'+label+'<select name="'+name+'">'+options(values,value)+'</select></label>';
+const textarea = (label,name,value="",attrs="")=>'<label>'+label+'<textarea name="'+name+'" '+attrs+'>'+escapeText(value)+'</textarea></label>';
+function dialog(title,fields,onSubmit,onRemove) {
+  editor.innerHTML = '<form><h2 id="editor-title">'+title+'</h2>'+fields+
+    '<p class="small error notice" role="alert"></p><div class="actions"><button type="submit" class="button primary">Save</button><button type="button" class="button" id="cancel">Cancel</button>'+
+    (onRemove ? '<button type="button" class="button" id="remove">Delete</button>' : "")+'</div></form>';
+  const form = editor.querySelector("form");
+  const notice = editor.querySelector(".notice");
+  editor.querySelector("#cancel").onclick = ()=>editor.close();
+  form.onsubmit = event=>{
+    event.preventDefault();
+    const fields = Object.fromEntries([...new FormData(form)].map(([name,value])=>[name,value.trim()]));
+    try {
+      if (!persist(onSubmit(fields))) throw Error(saveMessage);
+      editor.close();
+      render();
+    } catch (error) { notice.textContent = error.message; }
+  };
+  if (onRemove) editor.querySelector("#remove").onclick = event=>{
+    if (event.currentTarget.textContent==="Delete") {
+      event.currentTarget.textContent = "Confirm delete";
+      return;
+    }
+    if (!persist(onRemove())) { notice.textContent=saveMessage; return; }
+    editor.close();
+    render();
+  };
+  editor.showModal();
+}
+const uuid = ()=>crypto.randomUUID();
+const replace = (items,item)=>items.some(old=>old.id===item.id) ? items.map(old=>old.id===item.id?item:old) : [...items,item];
+function editDeck(id) {
+  const deck = state.decks.find(item=>item.id===id);
+  const format = deck?.format || metaFormat;
+  dialog(deck?"Edit deck":"Add a deck",
+    '<fieldset class="archetype-picker"><legend>Choose an archetype</legend>'+
+    input("Search archetypes","archetypeSearch","","search",'maxlength="80" placeholder="e.g. landfall or dragons"')+
+    select("Format","format",formats,format)+
+    '<label>Matching archetypes<select id="archetype-choices" size="6"></select></label><span class="small muted" id="archetype-count" aria-live="polite"></span>'+
+    input("Selected archetype or your own","archetype",deck?.archetype,"text",'required maxlength="80"')+'</fieldset>'+
+    input("Deck name","name",deck?.name,"text",'required maxlength="80" placeholder="e.g. Friday Night Boros"')+
+    textarea("Decklist (optional)","list",deck?.list,'maxlength="25000" placeholder="Paste your main deck and sideboard"')+
+    '<details><summary>Find cards with Scryfall</summary><div class="card-search">'+
+    input("Card name","cardSearch","","search",'maxlength="100" placeholder="e.g. Ocelot Pride"')+
+    '<button class="button" type="button" id="card-search-button">Find cards</button><div id="card-status" class="small muted" aria-live="polite"></div><div id="card-results" class="card-results"></div></div></details>',
+    fields=>{
+      const {name,archetype,format:chosenFormat,list} = fields;
+      if (!name || !archetype) throw Error("Enter a deck name and an archetype.");
+      if (deck?.matches.length && chosenFormat!==deck.format) throw Error("This deck has match history. Add a new deck to track it in another format.");
+      return {...state,decks:replace(state.decks,{id:deck?.id||uuid(),matches:deck?.matches||[],name,archetype,format:chosenFormat,list})};
+    },deck?()=>({...state,decks:state.decks.filter(item=>item.id!==id)}):null);
+  const form = editor.querySelector("form");
+  const search = form.elements.archetypeSearch;
+  const chosen = form.elements.archetype;
+  const choices = editor.querySelector("#archetype-choices");
+  const updateChoices = () => {
+    const terms = search.value.trim().split(/\s+/).map(normalize).filter(Boolean);
+    const results = archetypeNames(form.elements.format.value).filter(name=>terms.every(term=>normalize(name).includes(term)));
+    choices.innerHTML = options(results,chosen.value);
+    choices.selectedIndex = results.indexOf(chosen.value);
+    editor.querySelector("#archetype-count").textContent = results.length+" matching archetypes";
+  };
+  search.addEventListener("input",updateChoices);
+  form.elements.format.addEventListener("change",()=>{chosen.value="";updateChoices();});
+  choices.addEventListener("change",()=>{chosen.value=choices.value;});
+  updateChoices();
+  connectCardSearch(form);
+}
+function connectCardSearch(form) {
+  const field = form.elements.cardSearch;
+  const status = form.querySelector("#card-status");
+  const results = form.querySelector("#card-results");
+  const trigger = form.querySelector("#card-search-button");
+  async function findCards() {
+    const query = field.value.trim();
+    if (query.length<2) { status.textContent="Enter at least two characters."; return; }
+    trigger.disabled = true;
+    status.textContent = "Searching Scryfall…";
+    results.replaceChildren();
+    const params = new URLSearchParams({q:query});
+    try {
+      const response = await fetch("https://api.scryfall.com/cards/autocomplete?"+params,{headers:{Accept:"application/json"},signal:AbortSignal.timeout(8000)});
+      if (!response.ok) throw Error("Card lookup unavailable");
+      const cards = (await response.json()).data;
+      if (!Array.isArray(cards)) throw Error("Invalid card response");
+      status.textContent = cards.length ? "Choose a card to add one copy to your decklist." : "No matching card names.";
+      for (const card of cards) {
+        if (typeof card!=="string") continue;
+        const choice = document.createElement("button");
+        choice.type = "button";
+        choice.className = "button";
+        choice.textContent = card;
+        choice.addEventListener("click",()=>{
+          const list = form.elements.list;
+          const base = list.value.trimEnd();
+          const sideboard = base.search(/^\s*sideboard\s*:?\s*$/im);
+          const main = sideboard<0 ? base : base.slice(0,sideboard).trimEnd();
+          const next = (main?main+"\n":"")+"1 "+card+(sideboard<0?"":"\n\n"+base.slice(sideboard).trimStart());
+          if (next.length>list.maxLength) {status.textContent="The decklist has reached its length limit.";return;}
+          list.value = next;
+          status.textContent = "Added "+card+".";
+        });
+        results.append(choice);
+      }
+    } catch {
+      status.textContent = "Card lookup is unavailable. Search on Scryfall and paste the card name.";
+    } finally {
+      results.insertAdjacentHTML("beforeend",link("https://scryfall.com/search?"+params,"Open Scryfall search ↗"));
+      trigger.disabled = false;
+    }
+  }
+  trigger.addEventListener("click",findCards);
+  for (const input of [field,form.elements.archetypeSearch]) input.addEventListener("keydown",event=>{
+    if (event.key!=="Enter") return;
+    event.preventDefault();
+    if (input===field && !trigger.disabled) findCards();
+  });
+}
+function editMatch(id) {
+  const [deckId,matchId] = id.split("/");
+  const deck = state.decks.find(item=>item.id===deckId);
+  const match = deck.matches.find(item=>item.id===matchId);
+  const withMatches = matches=>({...state,decks:replace(state.decks,{...deck,matches})});
+  dialog(match?"Edit match":"Log a match",
+    '<div class="two">'+input("Date","date",match?.date||today(),"date","required")+
+    select("Result","result",["Win","Loss","Draw"],{W:"Win",L:"Loss",D:"Draw"}[match?.result])+'</div>'+
+    input("Opponent archetype","opponent",match?.opponent,"text",'required maxlength="80" list="opponents" placeholder="e.g. Domain Zoo"')+
+    '<datalist id="opponents">'+options(archetypeNames(deck.format))+'</datalist>'+
+    input("Event (optional)","event",match?.event,"text",'maxlength="100"'),
+    fields=>{
+      if (!fields.opponent) throw Error("Enter the opponent archetype.");
+      return withMatches(replace(deck.matches,{...fields,id:match?.id||uuid(),result:fields.result[0]}));
+    },match?()=>withMatches(deck.matches.filter(item=>item.id!==matchId)):null);
+}
+function editEvent(id) {
+  const event = state.customEvents.find(item=>item.id===id);
+  const date = event ? eventDate(event) : today();
+  dialog(event?"Edit event":"Add an event",
+    input("Event name","title",event?.title,"text",'required maxlength="100"')+
+    '<div class="two">'+select("Where","scope",["Brisbane","Major event"],(event?.scope||scope)==="local"?"Brisbane":"Major event")+
+    select("Format","format",formats,event?.format||filter)+'</div>'+
+    select("Brisbane event category","category",eventCategories,event ? eventCategory(event) : category)+
+    input("Venue or city","venue",event?.venue,"text",'required maxlength="100"')+
+    '<div class="two">'+input("Date","date",date,"date","required")+input("Start time (AEST, optional)","time",event?.start?.slice(11,16),"time")+'</div>'+
+    input("Event or registration URL","url",event?.url,"url",'required placeholder="https://"')+
+    input("Stream URL (optional)","stream",event?.stream,"url",'placeholder="https://"'),
+    fields=>{
+      if (!fields.title || !fields.venue || !safeUrl(fields.url) || (fields.stream && !safeUrl(fields.stream))) throw Error("Enter a title, venue and valid HTTPS links.");
+      const timed = fields.time ? {start:fields.date+"T"+fields.time+":00+10:00"} : {date:fields.date};
+      const eventScope = fields.scope==="Brisbane" ? "local" : "major";
+      return {...state,customEvents:replace(state.customEvents,{...timed,id:event?.id||uuid(),custom:true,scope:eventScope,
+        category:eventScope==="local" ? fields.category : undefined,kind:"Personal listing",format:fields.format,title:fields.title,venue:fields.venue,url:fields.url,stream:fields.stream})};
+    },event?()=>({...state,customEvents:state.customEvents.filter(item=>item.id!==id)}):null);
+}
+function editSnapshot() {
+  dialog("Add a metagame snapshot",
+    select("Format","format",formats,metaFormat)+
+    '<div class="two">'+input("Window ending","asOf",today(),"date","required")+input("Published lists","sample","","number",'required min="1" max="10000000" step="1"')+'</div>'+
+    input("Date window label","window","","text",'required maxlength="70" placeholder="e.g. 8 Oct – 6 Nov 2026"')+
+    input("Source name","source","","text",'required maxlength="70"')+
+    input("Source link","url","","url",'required placeholder="https://"')+
+    textarea("Archetype and share, one per line","rows","",'required maxlength="12000" placeholder="Boros Energy, 6.2\nRuby Storm, 3.3"'),
+    fields=>{
+      if (!fields.window || !fields.source || !safeUrl(fields.url)) throw Error("Enter the date window, source name and an HTTPS source link.");
+      const seen = new Set();
+      const rows = fields.rows.split(/\r?\n/).map(line=>line.trim()).filter(Boolean).map(line=>{
+        const row = line.match(/^(.+),\s*(\d+(?:\.\d+)?)\s*%?$/);
+        const name = row?.[1].trim();
+        const id = name && normalize(name);
+        if (!id || Number(row[2])>100 || seen.has(id)) throw Error("Use one unique archetype and a percentage from 0 to 100 per line.");
+        seen.add(id);
+        return [name,Number(row[2])];
+      }).sort((a,b)=>b[1]-a[1]);
+      if (!rows.length) throw Error("Enter at least one archetype.");
+      const old = state.snapshots[fields.format]||[];
+      const snapshot = {...fields,sample:Number(fields.sample),rows};
+      return {...state,snapshots:{...state.snapshots,[fields.format]:[snapshot,...old.filter(item=>item.asOf!==fields.asOf)]}};
+    });
+}
+
+app.addEventListener("click",event=>{
+  const control = event.target.closest("button[data-action]");
+  if (!control) return;
+  const {action,id,category:clickedCategory} = control.dataset;
+  switch (action) {
+    case "scope": scope=id; filter="All formats"; showEvents(); app.querySelector('[data-action="scope"][data-id="'+id+'"]').focus(); break;
+    case "filter":
+      filter=id;
+      if (clickedCategory) category=clickedCategory;
+      showEvents();
+      app.querySelector('[data-action="filter"][data-category="'+clickedCategory+'"][data-id="'+id+'"]').focus();
+      break;
+    case "deck": editDeck(id); break;
+    case "match": editMatch(id); break;
+    case "event": editEvent(id); break;
+    case "snapshot": editSnapshot(); break;
+    case "expand-meta":
+      metaExpanded = !metaExpanded;
+      showDecks();
+      app.querySelector('[data-action="expand-meta"]').focus();
+      break;
+  }
+});
+app.addEventListener("change",event=>{
+  const {id,value} = event.target;
+  if (id!=="meta-format" && id!=="meta-source") return;
+  if (id==="meta-format") metaFormat = value;
+  else metaSource = value;
+  metaExpanded = false;
+  showDecks();
+  document.getElementById(id).focus();
+});
+window.addEventListener("hashchange",render);
+render();
+
+</script>
+</body></html>
