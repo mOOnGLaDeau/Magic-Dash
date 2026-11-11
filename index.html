@@ -10,14 +10,18 @@
 :root{color-scheme:dark;--bg:#111111;--card:#1d1d1d;--line:#3b3b3b;--text:#f7f7f7;--muted:#bdbdbd;--accent:#a9c8f5;--accent-surface:#243248;--accent-edge:#6b8bb7;--owned-text:#ffdc9f;--owned-surface:#33291d;--owned-edge:#c39553;--dark:#303030;--radius:17px}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,sans-serif}button,input,textarea,select{font:inherit}button,a,input,textarea,select{outline-offset:4px}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent)}button{cursor:pointer}a{color:var(--accent)}a:hover,button:hover{filter:brightness(1.12)}h1,h2,h3,p{margin:0}h1{font-size:clamp(44px,7vw,86px);letter-spacing:-.078em;line-height:.98;font-weight:750}h2{font-size:32px;letter-spacing:-.045em;line-height:1.12}h3{font-size:20px;line-height:1.22;letter-spacing:-.025em}.muted{color:var(--muted)}.small{font-size:13px}.frame{width:min(1170px,calc(100% - 52px));margin:auto}.top{border-bottom:1px solid var(--line)}.top .frame{min-height:74px;display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{display:flex;gap:10px;align-items:center;color:var(--text);text-decoration:none;font-size:19px;font-weight:750;letter-spacing:-.05em}.logo{width:33px;height:33px;display:grid;place-items:center;border-radius:9px;background:var(--accent);color:#171717}.logo svg{width:22px}.nav{display:flex;gap:6px;flex-wrap:wrap}.nav a,.pill,.button{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:9px;padding:8px 13px;background:var(--card);color:var(--text);text-decoration:none;font-weight:650;font-size:13px}.nav a{background:none;border-color:transparent;color:var(--muted)}.nav a[aria-current]{color:var(--accent);background:var(--accent-surface)}.tag,.eyebrow,.num{font:700 11px/1.35 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase}.zone,.eyebrow{color:var(--accent)}.zone{white-space:nowrap}.hero{position:relative;overflow:hidden;isolation:isolate;margin-top:29px;padding:46px 46px 42px;min-height:258px;border:1px solid #394454;background:linear-gradient(106deg,#263346 0%,#20252c 53%,#18191c 100%);border-radius:22px}.hero h1{margin:12px 0 14px}.hero p:last-of-type{max-width:540px;color:#d6d6d6;font-size:16px}.work{margin:35px 0 58px}.heading{display:flex;justify-content:space-between;align-items:end;gap:18px;margin-bottom:17px}.heading .eyebrow{margin-bottom:7px}.switch,.filter-pills,.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.filter-list{display:grid;gap:8px;margin:0 0 16px}.filters{display:flex;align-items:center;gap:10px}.filter-label{flex:0 0 92px;font:700 11px/1.35 ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}.filters:has([aria-pressed=true]) .filter-label{color:var(--accent)}.pill{border-radius:999px;color:var(--muted);padding:6px 12px}.pill[aria-pressed=true],.switch button[aria-pressed=true]{border-color:var(--accent-edge);color:var(--accent);background:var(--accent-surface)}.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(255px,1fr);gap:20px;align-items:start}.stack{display:grid;gap:12px}.event,.panel,.deck,.empty{border:1px solid var(--line);border-radius:var(--radius);background:var(--card);padding:19px}.event{display:grid;grid-template-columns:66px minmax(0,1fr);gap:15px}.date{align-self:start;display:grid;justify-items:center;gap:2px;border:1px solid #4b617e;border-radius:11px;background:var(--accent-surface);color:var(--accent);padding:9px 4px}.date strong{font-size:24px;line-height:1}.tags{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 8px}.tag{display:inline-block;border:1px solid #5c5c5c;background:#303030;color:#eeeeee;border-radius:5px;padding:4px 6px;letter-spacing:.045em}.tag.alt{color:#d5d5d5;background:#2b2b2b;border-color:#464646}.event p{margin:5px 0 10px}.button.primary{background:var(--accent);border-color:var(--accent);color:#161616}.panel .eyebrow{margin-bottom:8px}.panel h3{margin-bottom:8px}.panel p{margin-bottom:12px}.panel ul{padding:0;list-style:none;margin:0}.panel li{border-top:1px solid var(--line);padding:8px 0}.panel li:last-child{padding-bottom:0}.footer{border-top:1px solid var(--line);color:var(--muted);padding:20px 0}.footer .frame{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.deck .heading{align-items:start;margin-bottom:12px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.stat{background:#292929;border-radius:10px;padding:9px 10px}.stat strong{font-size:20px;display:block}.stat span{color:var(--muted);font-size:12px}.meta-row{display:grid;grid-template-columns:1fr auto;gap:4px;align-items:center;border-top:1px solid var(--line);padding:8px 0}.meta-row b{color:var(--accent)}.bar{grid-column:1/-1;height:4px;border-radius:3px;background:#3c3c3c;overflow:hidden}.bar span{display:block;height:100%;background:#c9c9c9}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:7px 7px 7px 0;border-bottom:1px solid var(--line)}details{margin-top:10px}summary{cursor:pointer;color:var(--accent)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}dialog{width:min(530px,calc(100% - 30px));max-height:calc(100% - 32px);border:1px solid #666666;border-radius:18px;background:var(--card);color:var(--text);padding:22px}dialog::backdrop{background:#080808bb}form{display:grid;gap:10px}label{display:grid;gap:4px;font-weight:650;font-size:13px}input,select,textarea{min-width:0;width:100%;border:1px solid #646464;background:#151515;color:var(--text);border-radius:8px;padding:8px 10px}textarea{min-height:100px;resize:vertical}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.error{color:#eeeeee}.notice{min-height:22px}.empty p{margin:6px 0 12px}.visually-hidden{position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden;white-space:nowrap}
 @media(max-width:760px){.filters{align-items:flex-start;flex-direction:column;gap:5px}.filter-label{flex:auto}.filter-list{gap:13px}.frame{width:calc(100% - 30px)}.grid{grid-template-columns:1fr}.hero{padding:29px 24px;min-height:220px}.zone{display:none}.heading{align-items:start;flex-direction:column}.deck .heading{flex-direction:row}.top .frame{min-height:64px}.event{padding:13px;gap:10px;grid-template-columns:54px minmax(0,1fr)}.nav a,.button{padding:7px 9px}}@media(max-width:370px){.top .frame{gap:7px}.brand{font-size:15px}.nav{gap:0}.nav a{padding:6px}.stats{grid-template-columns:1fr}.two{grid-template-columns:1fr}}
 .hero{display:grid;grid-template-columns:minmax(0,1fr);align-items:center;gap:32px}
-@media(min-width:761px){.hero:has(.scan-panel:not([hidden])){grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);min-height:290px}}
-.scan-panel{align-self:stretch;width:100%;min-width:0;padding:24px 26px;background:#181818;border:1px solid var(--line);border-radius:14px}
+.hero.hero-events{display:block;min-height:0;margin-top:18px;padding:0;border:0;border-radius:0;background:none}
+.hero.hero-events h1{margin:0;font-size:clamp(30px,4vw,42px);letter-spacing:-.035em;line-height:1.12}
+.hero-events + .work{margin-top:14px}
+.scan-panel{margin-top:8px;min-width:0}
 .scan-panel[hidden]{display:none}
-.scan-panel h2{font-size:clamp(25px,3vw,34px);margin:3px 0 8px}
+.hero .scan-panel #scan-status{font-size:13px;color:var(--muted)}
+.scan-panel details{margin:0}
+.scan-panel summary{display:list-item;min-height:44px;padding:10px 0;font-weight:650}
 .scan-items{list-style:none;margin:0;padding:0;max-height:290px;overflow:auto}
 .scan-items li{border-top:1px solid var(--line);padding:8px 4px 4px 0;margin-top:7px}
 .scan-items a{font-weight:650}
-.scan-items p{font-size:12px!important;line-height:1.4}
+.scan-items p{font-size:13px;line-height:1.4}
 #hero-copy:empty{display:none}
 
 /* Keep cards, forms and navigation usable in a narrow viewport. */
@@ -36,7 +40,6 @@
   }
   .hero h1 { font-size: clamp(38px, 9vw, 62px); }
   .hero p:last-of-type { font-size: 15px; }
-  .scan-panel { padding: 17px 16px; }
   .scan-items a { display: inline-flex; align-items: center; min-height: 44px; }
   .scan-items li { padding-top: 0; }
   .work { margin: 24px 0 32px; }
@@ -103,20 +106,12 @@
 .combined-meta tr.meta-owned{background:var(--owned-surface);color:var(--owned-text)}
 .combined-meta tr.meta-owned .meta-archetype-link{color:inherit}
 .combined-meta tr.meta-owned td:first-child{box-shadow:inset 3px 0 var(--owned-edge);padding-left:8px}
-.event-filters{margin-bottom:16px;border-color:#40516a}
-.event-filters h3{margin-bottom:4px}
-.event-filters .filter-list{margin-bottom:0}
-.event-filters .filters{display:grid;grid-template-columns:110px minmax(0,1fr);align-items:center;gap:8px}
-.event-filters .filter-label{color:var(--text)}
-.event-option{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:7px 12px;border:1px solid #505963;border-radius:8px;background:#222529;color:var(--text);font-weight:650;text-align:left}
-.event-option::before{content:"";width:13px;height:13px;flex:none;border:1px solid #78838d;border-radius:50%}
-.event-option[aria-pressed=true]{border-color:var(--accent-edge);background:var(--accent-surface);color:var(--accent)}
-.event-option[aria-pressed=true]::before{border-color:var(--accent);background:radial-gradient(circle,var(--accent) 0 40%,transparent 46%)}
-.event-results-state{padding:9px 11px;border-left:3px solid var(--accent-edge);background:#22262d;border-radius:0 7px 7px 0}
-@media(max-width:760px){
-  .event-filters .filters{grid-template-columns:minmax(0,1fr);gap:5px}
-  .event-option{min-height:44px}
-}
+.event-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-bottom:12px}
+.event-filters label{flex:1 1 100px;min-width:0}
+.event-filters label:last-child{flex-grow:1.4}
+.event-filters select{min-height:44px}
+.event-results-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#event-results #compete-status:empty{display:none}
 .shop-panel,.recent-results{max-width:960px}
 .recent-results{margin-top:20px;max-width:none}
 .shop-switch,.shop-search-row,.shop-result-heading{display:flex;align-items:center;gap:10px}
@@ -152,13 +147,14 @@
 <span class="zone tag">Brisbane · AEST</span>
 </div></header>
 <main class="frame">
-<section class="hero">
+<section class="hero" id="page-hero">
 <div class="hero-intro"><p id="hero-label" class="eyebrow"></p><h1 id="hero-title"></h1><p id="hero-copy"></p></div>
-<aside class="scan-panel" id="scan-panel" aria-labelledby="scan-title" hidden>
-  <p class="eyebrow">Brisbane · Competitive</p>
-  <h2 id="scan-title">New Events Added</h2>
-  <p id="scan-status" class="small muted"></p>
-  <ul id="scan-items" class="scan-items"></ul>
+<aside class="scan-panel" id="scan-panel" aria-label="New Events Added" hidden>
+  <p id="scan-status" class="small muted">New Events Added · None yet</p>
+  <details id="scan-details" hidden>
+    <summary>New Events Added <span id="scan-count"></span></summary>
+    <ul id="scan-items" class="scan-items"></ul>
+  </details>
 </aside>
 </section>
 <div class="work" id="app"></div>
@@ -356,7 +352,9 @@ function showRecentNews(now) {
   const added = eventListings().filter(item=>item.scope==="local" && eventCategory(item)==="Competitive" &&
     dateKey(item.discoveredOn) && item.discoveredOn>=cutoff && item.discoveredOn<=currentDate).sort((a,b)=>
     b.discoveredOn.localeCompare(a.discoveredOn) || eventDate(a).localeCompare(eventDate(b)));
-  scanStatus.textContent = added.length ? "" : "No new events yet.";
+  scanStatus.hidden = added.length > 0;
+  document.querySelector("#scan-details").hidden = added.length === 0;
+  document.querySelector("#scan-count").textContent = "("+added.length+")";
   scanItems.innerHTML = added.map(item=>{
     const when = item.start ? dayText(item.start)+" · "+timeText(item.start)+" AEST" : dayText(localDate(item.date))+" · Time TBA";
     return "<li>"+link(item.url,item.title,"")+
@@ -373,26 +371,16 @@ function showEvents() {
       (filter==="All formats" || item.format===filter) &&
       isUpcoming(item,now))
     .sort((a,b)=>(a.start||localDate(a.date)).localeCompare(b.start||localDate(b.date)));
-  const filterRow = (label="") => {
-    const pills = ["All formats",...formats].map(format=>{
-      const pressed = filter===format && (!label || category===label);
-      return '<button type="button" class="event-option" aria-controls="event-results" aria-pressed="'+pressed+'" data-action="filter" data-category="'+label+'" data-id="'+format+'">'+format+'</button>';
-    }).join("");
-    return '<div class="filters" role="group" aria-label="'+(label ? label+" formats" : "Format")+'">'+
-      '<span class="filter-label">'+(label || "Format")+'</span><div class="filter-pills">'+pills+'</div></div>';
-  };
-  const filters = scope==="local" ? eventCategories.map(filterRow).join("") : filterRow();
+  const filterSelect = (label,id,values,selected) => '<label>'+label+'<select id="'+id+'" aria-controls="event-results">'+options(values,selected)+'</select></label>';
+  const filters = filterSelect("Region","event-region",["Brisbane","Major events"],scope==="local"?"Brisbane":"Major events")+
+    (scope==="local"?filterSelect("Play type","event-category",eventCategories,category):"")+
+    filterSelect("Format","event-format",["All formats",...formats],filter);
   const resultType = scope==="local" ? category.toLowerCase()+" " : "";
-  const selection = scope==="local" ? "Brisbane · "+category+" · "+filter : "Major events · "+filter;
-  app.innerHTML = '<div class="heading"><div><p class="eyebrow">01 / Event tracker</p><h2>Upcoming events</h2></div>'+button("+ Add event","event")+'</div>'+
+  app.innerHTML = '<div class="event-filters" role="group" aria-label="Event filters">'+filters+'</div>'+
+    '<div class="grid"><section class="stack" id="event-results" aria-labelledby="event-results-title">'+
+    '<div class="event-results-heading"><div><h2 id="event-results-title">Upcoming events</h2><p class="small muted">'+listings.length+' '+(listings.length===1?"event":"events")+'</p></div>'+button("+ Add event","event")+'</div>'+
     '<p class="small" id="compete-status" role="status"></p>'+
-    '<section class="panel event-filters" aria-labelledby="event-filter-heading"><h3 id="event-filter-heading">Filter events</h3>'+
-    '<p class="small muted">Choose a region and a format. Your selection updates the list below.</p>'+
-    '<div class="filter-list"><div class="filters" role="group" aria-label="Event region"><span class="filter-label">Region</span><div class="switch">'+
-    '<button type="button" class="event-option" data-action="scope" data-id="local" aria-controls="event-results" aria-pressed="'+(scope==="local")+'">Brisbane</button>'+
-    '<button type="button" class="event-option" data-action="scope" data-id="major" aria-controls="event-results" aria-pressed="'+(scope==="major")+'">Major events</button></div></div>'+filters+'</div></section>'+
-    '<div class="grid"><section class="stack" id="event-results" aria-label="Event results"><p class="small event-results-state" aria-live="polite"><strong>'+escapeText(selection)+'</strong><br>'+listings.length+' upcoming '+(listings.length===1?"event":"events")+'</p>'+
-    (listings.map(eventCard).join("") || '<div class="empty"><h3>No verified upcoming '+resultType+(filter==="All formats"?"":escapeText(filter)+" ")+'listings in this view</h3><p class="muted">Try another filter or add an event from an organiser.</p>'+button("+ Add event","event")+'</div>')+'</section>'+
+    (listings.map(eventCard).join("") || '<div class="empty"><h3>No verified upcoming '+resultType+(filter==="All formats"?"":escapeText(filter)+" ")+'listings</h3><p class="muted">Try another filter or add an event from an organiser.</p></div>')+'</section>'+
     '<aside class="stack"><section class="panel"><p class="eyebrow">Sources</p><h3>'+ (scope==="local"?"Brisbane organisers":"Coverage & schedules")+'</h3><ul>'+
     (scope==="local"
       ? '<li>'+link("https://vaultgames.com.au/collections/brisbane-events","Vault Games ↗","")+'</li><li>'+link("https://playmantis.com.au/collections/events","Playmantis ↗","")+'</li><li>'+link("https://www.mtgmate.com.au/pages/events","MTG MATE ↗","")+'</li><li>'+link("https://raptorgames.com/pages/weekly-magic-the-gathering-standard-tournaments-brisbane","Raptor Games ↗","")+'</li><li>'+link("https://locator.wizards.com/","Wizards Store & Event Locator ↗","")+'</li><li>'+link("https://tavernfinder.com/en/events/near/au/brisbane","Tavern Finder Brisbane ↗","")+'</li>'
@@ -590,12 +578,13 @@ function showPlay() {
 function render() {
   const page = ["#decks","#buy","#play"].includes(location.hash) ? location.hash : "#events";
   const headings = {
-    "#events":["Magic: The Gathering / Event tracker","Magic Dash","Find your next Brisbane tournament or catch the biggest matches live from home."],
+    "#events":["","Events",""],
     "#decks":["Deck tracker / Match results","Deck Tracker","Track your results against the decks people are bringing to tournaments."],
     "#buy":["03 / Magic Dash","Find Cards","Search for a card and open the results at Australian card stores."],
     "#play":["Play / Match log","Play","Log each round at the events you’re competing in and review past results."]
   };
   const [label,title,copy] = headings[page];
+  document.querySelector("#page-hero").classList.toggle("hero-events",page==="#events");
   const competing = state.playEvents.some(event=>event.competing && isUpcoming(event,Date.now()));
   document.querySelectorAll(".nav a").forEach(a=>{
     const active = a.hash === page;
@@ -840,15 +829,8 @@ function editSnapshot() {
 app.addEventListener("click",event=>{
   const control = event.target.closest("button[data-action]");
   if (!control) return;
-  const {action,id,category:clickedCategory} = control.dataset;
+  const {action,id} = control.dataset;
   switch (action) {
-    case "scope": scope=id; filter="All formats"; showEvents(); app.querySelector('[data-action="scope"][data-id="'+id+'"]').focus(); break;
-    case "filter":
-      filter=id;
-      if (clickedCategory) category=clickedCategory;
-      showEvents();
-      app.querySelector('[data-action="filter"][data-category="'+clickedCategory+'"][data-id="'+id+'"]').focus();
-      break;
     case "deck": editDeck(id); break;
     case "match": editMatch(id); break;
     case "play-match": editPlayMatch(id); break;
@@ -870,6 +852,14 @@ app.addEventListener("input",event=>{
 });
 app.addEventListener("change",event=>{
   const {id,value} = event.target;
+  if (["event-region","event-category","event-format"].includes(id)) {
+    if (id==="event-region") { scope=value==="Brisbane"?"local":"major"; filter="All formats"; }
+    if (id==="event-category") category=value;
+    if (id==="event-format") filter=value;
+    showEvents();
+    document.getElementById(id).focus();
+    return;
+  }
   if (id!=="meta-format" && id!=="meta-window") return;
   if (id==="meta-format") metaFormat = value;
   else metaWindow = Number(value);
