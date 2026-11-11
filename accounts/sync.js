@@ -5,6 +5,9 @@ if (config?.url && config.publishableKey) {
 
 async function startAccounts() {
   const accountButton = document.querySelector("#account-button");
+  const identity = document.querySelector("#account-identity");
+  const logout = document.querySelector("#account-logout");
+  const deleteAccount = document.querySelector("#account-delete");
   const dialog = document.querySelector("#account-dialog");
   const form = document.querySelector("#account-form");
   const title = document.querySelector("#account-title");
@@ -12,13 +15,16 @@ async function startAccounts() {
   const actions = document.querySelector("#account-actions");
   const status = document.querySelector("#account-status");
   const close = document.querySelector("#account-close");
-  const empty = () => ({decks: [], customEvents: [], playEvents: [], snapshots: {}});
+  const empty = emptyAccountState;
   const readLocal = () => {
-    try { return {...empty(), ...JSON.parse(localStorage.getItem("mana-radar-v1"))}; }
+    try {
+      return {...empty(), ...JSON.parse(localStorage.getItem("mana-radar-v1")),
+        watchlist: JSON.parse(localStorage.getItem("magic-dash-local-watches")) || []};
+    }
     catch { return empty(); }
   };
   const hasLocalData = data =>
-    data.decks.length || data.customEvents.length || data.playEvents.length || Object.keys(data.snapshots).length;
+    data.decks.length || data.customEvents.length || data.playEvents.length || data.watchlist.length || Object.keys(data.snapshots).length;
   const table = "magic_dash_accounts";
   const redirectTo = new URL(location.pathname, location.origin).href;
   let client;
@@ -45,7 +51,7 @@ async function startAccounts() {
     input.autocomplete = autocomplete;
     input.required = true;
     if (name === "name") input.maxLength = 100;
-    if (mode !== "signin" && type === "password") input.minLength = 8;
+    if (["signup","password"].includes(mode) && type === "password") input.minLength = 8;
     wrapper.append(label, input);
     fields.append(wrapper);
   }
@@ -53,7 +59,14 @@ async function startAccounts() {
   function setStatus(message) {
     accountMessage = message;
     status.textContent = message;
-    accountButton.textContent = active?.failed || active?.conflict ? "Account · Sync issue" : "Account";
+    drawHeader();
+  }
+
+  function drawHeader() {
+    const user = active?.user;
+    identity.hidden = logout.hidden = deleteAccount.hidden = !user;
+    identity.textContent = user ? "Logged in as " + (user.user_metadata?.name?.trim?.() || user.email) : "";
+    accountButton.textContent = !user ? "Sign in" : active.failed || active.conflict ? "Account · Sync issue" : "Account";
   }
 
   function showMode(next) {
@@ -66,15 +79,23 @@ async function startAccounts() {
   function draw() {
     fields.replaceChildren();
     actions.replaceChildren();
-    accountButton.textContent = active?.failed || active?.conflict ? "Account · Sync issue" : "Account";
-    title.textContent = active && mode !== "password" ? "Your account" : {
+    drawHeader();
+    title.textContent = active && !["password","delete"].includes(mode) ? "Your account" : {
+      delete: "Delete account",
       signin: "Sign in", signup: "Create account", reset: "Reset password", password: "Set a new password"
     }[mode];
     if (!authReady) {
       status.textContent = accountMessage || "Connecting to accounts…";
       return;
     }
-    if (mode === "password") {
+    if (mode === "delete") {
+      const warning = document.createElement("p");
+      warning.textContent = "This permanently deletes your account, events, decks, match logs, and saved watchlist.";
+      fields.append(warning);
+      field("Current password", "password", "password", "current-password");
+      action("Permanently delete account", null, true);
+      action("Cancel", () => { if (!busy) showMode("signin"); });
+    } else if (mode === "password") {
       field("New password", "password", "password", "new-password");
       action("Set password", null, true);
     } else if (active) {
@@ -89,7 +110,6 @@ async function startAccounts() {
       if (active.ready && !active.conflict && hasLocalData(readLocal())) {
         action("Import this browser’s data", importLocal);
       }
-      action("Sign out", () => submitAuth(() => client.auth.signOut({scope: "local"})));
     } else {
       if (mode === "signup") field("Name", "name", "text", "name");
       field("Email", "email", "email", "email");
@@ -132,6 +152,7 @@ async function startAccounts() {
       decks: addMissing(current.decks, local.decks, "id"),
       customEvents: addMissing(current.customEvents, local.customEvents, "id"),
       playEvents: addMissing(playEvents, local.playEvents, "id"),
+      watchlist: window.MagicDashTools.mergeWatchlists(current.watchlist, local.watchlist),
       snapshots
     };
     if (JSON.stringify(merged) === JSON.stringify(current)) {
@@ -150,7 +171,7 @@ async function startAccounts() {
   }
 
   function save(profile, data) {
-    if (!profile.ready) throw Error("Wait for your account data to load before making changes.");
+    if (active !== profile || !profile.ready || mode === "delete") throw Error("Your account is unavailable for editing.");
     if (profile.conflict) throw Error("Open Account to resolve the sync conflict before making changes.");
     try { store(profile, {...profile.record, data, dirty: true}); }
     catch { throw Error("This browser could not save your changes."); }
@@ -207,7 +228,7 @@ async function startAccounts() {
       if (!discard && cached?.dirty) {
         profile.conflict = cached.revision !== revision;
       } else {
-        store(profile, {revision, data: data?.data || empty(), dirty: false});
+        store(profile, {revision, data: {...empty(), ...data?.data}, dirty: false});
         profile.conflict = false;
       }
       profile.ready = true;
@@ -238,15 +259,22 @@ async function startAccounts() {
     if (!user?.email_confirmed_at) {
       active = undefined;
       connectAccountStorage(undefined);
-      replaceAccountState(readLocal());
+      replaceAccountState(empty());
       setStatus("");
       mode = "signin";
       return;
     }
     const profile = {user, key: "magic-dash-account:" + user.id};
-    try { profile.record = JSON.parse(localStorage.getItem(profile.key)); } catch {}
+    try {
+      profile.record = JSON.parse(localStorage.getItem(profile.key));
+      if (profile.record) profile.record.data = {...empty(), ...profile.record.data};
+    } catch {}
     active = profile;
-    connectAccountStorage({save: data => save(profile, data)});
+    connectAccountStorage({
+      id: user.id,
+      canEdit: () => profile.ready && !profile.conflict && mode !== "delete",
+      save: data => save(profile, data)
+    });
     replaceAccountState(empty());
     void load(profile);
   }
@@ -268,16 +296,45 @@ async function startAccounts() {
   }
 
   accountButton.hidden = false;
-  accountButton.addEventListener("click", () => {
+  function openAccount() {
     draw();
-    dialog.showModal();
+    if (!dialog.open) dialog.showModal();
     (fields.querySelector("input") || close).focus();
+  }
+  accountButton.addEventListener("click", openAccount);
+  logout.addEventListener("click", () => {
+    void submitAuth(() => client.auth.signOut({scope: "local"}), () => switchUser(undefined));
   });
-  close.addEventListener("click", () => dialog.close());
+  deleteAccount.addEventListener("click", () => {
+    if (busy) return;
+    openAccount();
+    showMode("delete");
+  });
+  dialog.addEventListener("close", () => { if (mode === "delete" && !busy) mode = "signin"; });
+  dialog.addEventListener("cancel", event => { if (busy && mode === "delete") event.preventDefault(); });
+  close.addEventListener("click", () => { if (!busy || mode !== "delete") dialog.close(); });
   form.addEventListener("submit", event => {
     event.preventDefault();
     const {email, password, name} = Object.fromEntries(new FormData(form));
-    if (mode === "signup") {
+    if (mode === "delete" && active) {
+      const profile = active;
+      void submitAuth(async () => {
+        const result = await client.functions.invoke("magic-dash-delete-account", {body: {password}});
+        if (result.error || !result.data?.deleted) {
+          const details = await result.error?.context?.json?.().catch(() => null);
+          throw Error(details?.error || "Could not delete your account. Please try again.");
+        }
+        try {
+          localStorage.removeItem(profile.key);
+          localStorage.removeItem("magic-dash-scanner:" + profile.user.id);
+        } catch {}
+        await client.auth.signOut({scope: "local"}).catch(() => {});
+        if (active === profile) switchUser(undefined);
+        dialog.close();
+        announce("Your Magic Dash account was deleted.");
+        return {};
+      });
+    } else if (mode === "signup") {
       void submitAuth(() => client.auth.signUp({email, password, options: {data: {name: name.trim()}, emailRedirectTo: redirectTo}}),
         () => setStatus("Check your inbox for the link to verify your email."));
     } else if (mode === "reset") {

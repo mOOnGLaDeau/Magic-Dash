@@ -41,9 +41,9 @@
   };
   let mode="search";
   let query="";
-  let settings=read("scanner",{url:"",key:""});
-  let localWatches=read("local-watches",[]);
-  let watches=[];
+  const defaultSettings={url:read("scanner",{url:""}).url,key:""};
+  let settings=defaultSettings;
+  let settingsOwner;
   const connected=()=>Boolean(settings.url && settings.key);
 
   async function api(path,options={},privateRequest=false,connection=settings) {
@@ -94,20 +94,22 @@
     return [...new Set((await fallback.json()).data.map(card=>card.name))].slice(0,8);
   }
 
-  async function setWatch(card,watch) {
-    if (connected()) {
-      await api("/api/watch",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({card,watch})},true);
-      watches=watch ? [...watches.filter(item=>keyFor(item.card)!==keyFor(card)),{card,newOffers:[]}]
-        : watches.filter(item=>keyFor(item.card)!==keyFor(card));
-      return;
-    }
-    const changed=localWatches.filter(name=>keyFor(name)!==keyFor(card));
-    if (watch) changed.push(card);
-    if (!save("local-watches",changed)) throw new Error("This browser could not save the card.");
-    localWatches=changed;
+  function mergeWatchlists(existing,incoming) {
+    const cards=new Map(existing.map(card=>[keyFor(card),card]));
+    for (const card of incoming) if (!cards.has(keyFor(card))) cards.set(keyFor(card),card);
+    return [...cards.values()];
+  }
+
+  function setWatchlist(watchlist) {
+    if (!persist({...state,watchlist})) throw new Error(saveMessage);
   }
 
   function renderBuy(app) {
+    const owner=accountStorage?.id;
+    if (owner!==settingsOwner) {
+      settingsOwner=owner;
+      settings=owner ? read("scanner:"+owner,defaultSettings) : defaultSettings;
+    }
     app.innerHTML='<section class="panel shop-panel"><p class="eyebrow">Australian singles</p><div class="shop-switch" role="group" aria-label="Find Cards view">'+
       '<button type="button" class="button" id="shop-search" aria-pressed="'+(mode==="search")+'">Search stores</button>'+
       '<button type="button" class="button" id="shop-watch" aria-pressed="'+(mode==="watch")+'">Watchlist</button></div>'+
@@ -128,6 +130,7 @@
     app.querySelector("#shop-watch").onclick=()=>changeMode("watch");
     config.onsubmit=async event=>{
       event.preventDefault();
+      if (!requireAccount()) return;
       const raw=config.elements.url.value.trim();
       const url=validUrl(raw);
       const status=app.querySelector("#shop-config-status");
@@ -140,9 +143,9 @@
       try {
         const data=await api("/api/watch",{signal:AbortSignal.timeout(12000)},true,next);
         if (!Array.isArray(data.watches)) throw new Error("The URL did not return a Magic Dash watchlist.");
-        if (!save("scanner",next)) throw new Error("This browser could not save the connection.");
+        if (!content.isConnected || owner!==accountStorage?.id) return;
+        if (!save("scanner:"+owner,next)) throw new Error("This browser could not save the connection.");
         settings=next;
-        watches=data.watches;
         tools.feed={};
         void loadFeed();
         if (content.isConnected) {
@@ -154,7 +157,8 @@
       finally { controls.forEach(button=>{button.disabled=false;}); }
     };
     app.querySelector("#shop-disconnect").onclick=()=>{
-      if (save("scanner",{url:"",key:""})) { settings={url:"",key:""}; tools.feed={}; watches=[]; renderBuy(app); }
+      if (!requireAccount()) return;
+      if (save("scanner:"+owner,{url:"",key:""})) { settings={url:"",key:""}; tools.feed={}; renderBuy(app); }
     };
     if (mode==="watch") renderWatches(content);
     else renderSearch(content);
@@ -214,21 +218,18 @@
       nextStore.onclick=()=>openStores(true);
       const status=results.querySelector("#shop-watch-status");
       const watchButton=results.querySelector("#shop-watch-card");
-      const isWatched=()=>(connected()?watches.map(item=>item.card):localWatches).some(name=>keyFor(name)===keyFor(card));
+      const isWatched=()=>state.watchlist.some(name=>keyFor(name)===keyFor(card));
       const updateLabel=()=>{watchButton.textContent=isWatched()?"Stop watching":"Watch card";};
       updateLabel();
-      watchButton.onclick=async ()=>{
-        watchButton.disabled=true;
+      watchButton.onclick=()=>{
+        if (!requireAccount()) return;
         const watch=!isWatched();
-        try { await setWatch(card,watch); updateLabel(); status.textContent=watch?(connected()?"Added to the nightly watchlist.":"Saved on this device. Connect the scanner to start nightly checks."):"Removed from watchlist."; }
-        catch (error) { status.textContent=error.message; }
-        finally { watchButton.disabled=false; }
+        try {
+          setWatchlist(watch ? mergeWatchlists(state.watchlist,[card]) : state.watchlist.filter(name=>keyFor(name)!==keyFor(card)));
+          updateLabel();
+          status.textContent=watch ? "Card added. Syncing to your account." : "Card removed. Syncing to your account.";
+        } catch (error) { status.textContent=error.message; }
       };
-      if (connected()) api("/api/watch",{},true).then(data=>{
-        if (!watchButton.isConnected || watchButton.disabled) return;
-        watches=data.watches;
-        updateLabel();
-      }).catch(()=>{});
     };
     input.oninput=()=>{
       query=input.value;
@@ -266,42 +267,65 @@
   }
 
   async function renderWatches(content) {
-    content.innerHTML='<h3>Watched cards</h3><p class="small muted">Each card’s first scan establishes a baseline. Later scans show newly discovered listings.</p>'+
+    content.innerHTML='<h3>Watched cards</h3><p class="small muted">Your saved cards sync across devices. Use your connected scanner to start or stop nightly checks for a card.</p>'+
       '<p id="shop-watch-status" class="small" role="status"></p><div id="shop-watched-cards"></div>';
     const status=content.querySelector("#shop-watch-status");
     const list=content.querySelector("#shop-watched-cards");
-    if (connected()) {
-      status.textContent="Loading private watchlist…";
-      try { watches=(await api("/api/watch",{},true)).watches; status.textContent=""; }
-      catch (error) { status.textContent=error.message; return; }
-    } else status.textContent="Cards saved here stay on this device until you connect a nightly scanner.";
-    const entries=connected()?watches:localWatches.map(card=>({card,newOffers:[]}));
+    if (!accountStorage) {
+      status.textContent="Sign in to view and save your watchlist.";
+      return;
+    }
+    const account=accountStorage;
+    let scannerWatches=[];
+    if (connected() && state.watchlist.length) {
+      try { scannerWatches=(await api("/api/watch",{},true)).watches; }
+      catch { status.textContent="Nightly scanner results are unavailable."; }
+    }
+    if (!content.isConnected || account!==accountStorage) return;
+    const trackedCards=new Set(scannerWatches.map(item=>keyFor(item.card)));
+    const entries=state.watchlist.map(card=>scannerWatches.find(item=>keyFor(item.card)===keyFor(card)) || {card,newOffers:[]});
     list.innerHTML=entries.map((item,index)=>'<article class="shop-watch-card"><div class="shop-result-heading"><h4>'+escape(item.card)+'</h4>'+
       '<button class="button" type="button" data-watch-remove="'+index+'">Remove</button></div>'+
+      (connected()?'<button class="button" type="button" data-scan-toggle="'+index+'">'+(trackedCards.has(keyFor(item.card))?"Stop nightly scan":"Start nightly scan")+'</button>':'')+
       (item.checkedAt?'<p class="small muted">Last checked '+escape(time.format(new Date(item.checkedAt)))+' Brisbane time</p>':'')+
-      (item.newOffers.length?offerList(item.newOffers):'<p class="small muted">'+(item.checkedAt?"No new listings from checked stores on the latest scan.":"Waiting for a nightly scan.")+'</p>')+
+      (item.newOffers.length?offerList(item.newOffers):'<p class="small muted">'+(item.checkedAt?"No new listings from checked stores on the latest scan.":"No nightly scan available.")+'</p>')+
       '<details class="shop-sources"><summary>Search stores for '+escape(item.card)+'</summary>'+storeLinks(item.card)+'</details></article>').join("") ||
       '<p class="muted">Search for a card and choose Watch card to add it here.</p>';
-    if (connected() && localWatches.length) {
+    if (connected()) {
       const sync=document.createElement("button");
       sync.type="button";
       sync.className="button";
-      sync.textContent="Move saved cards to nightly watchlist";
+      sync.textContent="Import cards from connected scanner";
       sync.onclick=async ()=>{
+        if (!requireAccount()) return;
         sync.disabled=true;
         try {
-          for (const card of localWatches) await setWatch(card,true);
-          if (save("local-watches",[])) localWatches=[];
+          const data=await api("/api/watch",{},true);
+          if (!content.isConnected || account!==accountStorage) return;
+          setWatchlist(mergeWatchlists(state.watchlist,data.watches.map(item=>item.card)));
           renderWatches(content);
         } catch (error) { status.textContent=error.message; sync.disabled=false; }
       };
       list.prepend(sync);
     }
     list.querySelectorAll("[data-watch-remove]").forEach(button=>{
+      button.onclick=()=>{
+        if (!requireAccount()) return;
+        const card=entries[Number(button.dataset.watchRemove)].card;
+        try { setWatchlist(state.watchlist.filter(name=>keyFor(name)!==keyFor(card))); renderWatches(content); }
+        catch (error) { status.textContent=error.message; }
+      };
+    });
+    list.querySelectorAll("[data-scan-toggle]").forEach(button=>{
       button.onclick=async ()=>{
+        if (!requireAccount()) return;
+        const card=entries[Number(button.dataset.scanToggle)].card;
         button.disabled=true;
-        try { await setWatch(entries[Number(button.dataset.watchRemove)].card,false); renderWatches(content); }
-        catch (error) { status.textContent=error.message; button.disabled=false; }
+        try {
+          await api("/api/watch",{method:"PUT",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({card,watch:!trackedCards.has(keyFor(card))})},true);
+          if (content.isConnected && account===accountStorage) renderWatches(content);
+        } catch (error) { status.textContent=error.message; button.disabled=false; }
       };
     });
   }
@@ -322,11 +346,12 @@
   }
 
   async function loadFeed() {
-    if (!settings.url) return false;
-    try { tools.feed=await api("/api/feed"); return Boolean(tools.feed.checkedAt); }
+    const connection=accountStorage ? read("scanner:"+accountStorage.id,defaultSettings) : defaultSettings;
+    if (!connection.url) return false;
+    try { tools.feed=await api("/api/feed",{},false,connection); return Boolean(tools.feed.checkedAt); }
     catch { return false; }
   }
 
-  const tools={renderBuy,recentTournaments,loadFeed,feed:{}};
+  const tools={renderBuy,recentTournaments,loadFeed,mergeWatchlists,feed:{}};
   window.MagicDashTools=tools;
 })();

@@ -87,7 +87,9 @@
   .nav a { border-color: var(--line); }
 }
 
-#account-button[hidden]{display:none}
+#account-controls [hidden]{display:none}
+#account-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+#account-identity{overflow-wrap:anywhere}
 #account-fields,#account-actions{display:flex;gap:8px}
 #account-fields{flex-direction:column;overflow-wrap:anywhere}
 #account-actions{flex-wrap:wrap}
@@ -151,7 +153,12 @@
 <header class="top"><div class="frame">
 <a class="brand" href="#events"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="m12 12 8-8"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/></svg></span>Magic Dash</a>
 <nav class="nav" aria-label="Main"><a href="#events">Events</a><a href="#decks">Deck tracker</a><a href="#buy">Find Cards</a><a href="#play">Play</a></nav>
-<button class="button" type="button" id="account-button" hidden>Account</button>
+<div id="account-controls">
+<span class="small" id="account-identity" hidden></span>
+<button class="button" type="button" id="account-button">Sign in</button>
+<button class="button" type="button" id="account-logout" hidden>Log out</button>
+<button class="button" type="button" id="account-delete" hidden>Delete account</button>
+</div>
 <span class="zone tag">Brisbane · AEST</span>
 </div></header>
 <main class="frame">
@@ -257,7 +264,6 @@ meta["7-Point Highlander"] = {"TopDeck.gg":{window:"13 May – 5 Nov 2026",asOf:
 const zone = "Australia/Brisbane";
 const app = document.querySelector("#app");
 const editor = document.querySelector("#editor");
-const key = "mana-radar-v1";
 const escapeText = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[ch]);
 const safeUrl = value => {
   try { const url = new URL(value); return url.protocol === "https:" ? url.href : ""; }
@@ -275,11 +281,8 @@ const button = (label,action,id="",primary=false) => '<button type="button" clas
 const options = (values,selected) => values.map(value=>'<option'+(value===selected?" selected":"")+'>'+escapeText(value)+'</option>').join("");
 const fmt = n => Number(n).toLocaleString("en-AU");
 const normalize = str => str.toLowerCase().replace(/[^a-z0-9]+/g,"");
-let state = {decks:[], customEvents:[], snapshots:{}, playEvents:[]};
-try {
-  const saved = JSON.parse(localStorage.getItem(key));
-  if (saved) state = {...state,...saved};
-} catch {}
+const emptyAccountState = () => ({decks:[], customEvents:[], snapshots:{}, playEvents:[], watchlist:[]});
+let state = emptyAccountState();
 let scope = "local";
 const eventCategories = ["Competitive","Casual"];
 const eventCategory = item => item.category || "Competitive";
@@ -292,6 +295,12 @@ let metaExpanded = false;
 let saveMessage = "";
 let accountStorage;
 function connectAccountStorage(storage) { accountStorage = storage; }
+function requireAccount() {
+  if (accountStorage?.canEdit()) return true;
+  announce(accountStorage ? "Open Account to check your sync status." : "Sign in to save to Magic Dash.");
+  document.querySelector("#account-button").click();
+  return false;
+}
 function replaceAccountState(next) {
   if (editor.open) editor.close();
   state = next;
@@ -299,13 +308,13 @@ function replaceAccountState(next) {
 }
 function persist(next) {
   try {
-    if (accountStorage) accountStorage.save(next);
-    else localStorage.setItem(key,JSON.stringify(next));
+    if (!accountStorage) throw Error("Sign in to save to Magic Dash.");
+    accountStorage.save(next);
     state = next;
     saveMessage = "";
     return true;
   } catch (error) {
-    saveMessage = accountStorage ? error.message : "Your browser could not save this change.";
+    saveMessage = error.message;
     return false;
   }
 }
@@ -652,7 +661,7 @@ function dialog(title,fields,onSubmit,onRemove,afterSave) {
     render();
     const destination = afterSave?.() || actionControl(action,id) || pageHeading();
     destination.focus();
-    const message = removed ? "Entry deleted." : afterSave ? "Match saved on this device." : "Saved on this device.";
+    const message = removed ? "Entry removed. Syncing to your account." : afterSave ? "Match recorded. Syncing to your account." : "Change recorded. Syncing to your account.";
     if (afterSave) app.querySelector("#compete-status").textContent=message;
     announce(message);
   };
@@ -797,7 +806,7 @@ function toggleCompeting(id) {
     return;
   }
   render();
-  const message = competing ? "Event added to Play on this device." :
+  const message = competing ? "Event added to Play. Syncing to your account." :
     entry.matches.length ? "Competing cleared. Your matches are saved in Play." : "Event removed from Play.";
   app.querySelector("#compete-status").textContent=message;
   if (playRoute()) announce(message);
@@ -884,6 +893,7 @@ app.addEventListener("click",event=>{
   const control = event.target.closest("button[data-action]");
   if (!control) return;
   const {action,id} = control.dataset;
+  if (["deck","match","play-match","compete","event","snapshot"].includes(action) && !requireAccount()) return;
   switch (action) {
     case "deck": editDeck(id); break;
     case "match": editMatch(id); break;
