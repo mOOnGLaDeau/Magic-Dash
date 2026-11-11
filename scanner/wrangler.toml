@@ -3,7 +3,7 @@ main = "worker.mjs"
 compatibility_date = "2025-11-01"
 
 [vars]
-DASH_ORIGINS = "https://moongladeau.github.io"
+DASH_ORIGINS = "https://moongladeau.github.io,https://magicdash.app"
 
 [triggers]
 crons = ["0 14 * * *"]
