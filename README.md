@@ -9,8 +9,18 @@ Open `index.html` in a browser. The frontend has no build step. Scryfall card lo
 ## Source and data
 
 - `index.html` and `buy-cards.js` are the GitHub Pages frontend.
-- Decks and match logs live in browser storage. They are separate from the Git repository.
+- Guest decks, personal events and match logs live in browser storage. Signed-in users can sync them to their own account when accounts are configured.
 - The midnight Brisbane scan updates the Library copy. Its results can be carried into Git by updating the embedded `brisbane-scheduled-scan` data when needed.
+
+## Enable accounts
+
+1. Create a Supabase project and run `accounts/schema.sql` in its SQL editor. It grants authenticated users access only to their own data after email verification.
+2. Enable email/password signup and **Confirm email** in Authentication. Set both the Site URL and an allowed redirect URL to `https://moongladeau.github.io/Magic-Dash/`. Add separate explicit redirect URLs for any preview hosts you use.
+3. Configure custom SMTP in Supabase Authentication. Supabase's default mail service only sends to project team addresses. Test email confirmation and password recovery before opening signup to other users.
+4. Put the project's HTTPS URL and **publishable key** into `account-config.js`, then deploy GitHub Pages. Keep the secret key and SMTP credentials in the provider dashboard.
+5. Verify with two test accounts that each can see only its own data. On another device, sign in and check that decks, personal events, competing events, match logs and manual snapshots load.
+
+The **Account** button appears when the project URL and publishable key are configured. **Import this browser’s data** copies missing guest records into the signed-in account. Account edits save locally first and then sync. If another device has already saved over the same revision, the app keeps the unsynced copy available for download and asks the user to reload the account data before continuing.
 
 ## Deploy the scanner
 

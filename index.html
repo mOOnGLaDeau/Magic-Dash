@@ -87,6 +87,13 @@
   .nav a { border-color: var(--line); }
 }
 
+#account-button[hidden]{display:none}
+#account-fields,#account-actions{display:flex;gap:8px}
+#account-fields{flex-direction:column;overflow-wrap:anywhere}
+#account-actions{flex-wrap:wrap}
+#account-close{justify-self:start}
+@media(max-width:540px){#account-button{align-self:flex-end;margin-top:6px}}
+
 .meta-owned .tag{margin-top:3px;color:var(--owned-text);background:#47351f;border-color:#806139}
 .meta-expand{margin:10px 0;width:100%}
 .archetype-picker{border:1px solid var(--line);border-radius:9px;padding:10px;display:grid;gap:7px;margin:0;min-width:0}
@@ -144,6 +151,7 @@
 <header class="top"><div class="frame">
 <a class="brand" href="#events"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="m12 12 8-8"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/></svg></span>Magic Dash</a>
 <nav class="nav" aria-label="Main"><a href="#events">Events</a><a href="#decks">Deck tracker</a><a href="#buy">Find Cards</a><a href="#play">Play</a></nav>
+<button class="button" type="button" id="account-button" hidden>Account</button>
 <span class="zone tag">Brisbane · AEST</span>
 </div></header>
 <main class="frame">
@@ -162,8 +170,18 @@
 </main>
 <footer class="footer"><div class="frame"><span>Magic Dash · Magic: The Gathering tracker</span><span>All event times shown in Brisbane time (AEST)</span></div></footer>
 <dialog id="editor" aria-labelledby="editor-title"></dialog>
+<dialog id="account-dialog" aria-labelledby="account-title">
+  <form id="account-form">
+    <h2 id="account-title">Account</h2>
+    <div id="account-fields"></div>
+    <p id="account-status" role="status"></p>
+    <div id="account-actions"></div>
+    <button class="button" type="button" id="account-close">Close</button>
+  </form>
+</dialog>
 <script type="application/json" id="brisbane-scheduled-scan">{"lastScan":null,"events":[]}</script>
 <script src="buy-cards.js"></script>
+<script src="account-config.js"></script>
 <script>
 const formats = ["Standard","Modern","Legacy","7-Point Highlander"];
 const wizards = "https://magic.wizards.com/en/news/announcements/magiccon-heads-to-japan-europe-and-the-us-in-2027";
@@ -272,14 +290,22 @@ const metaWindows = ["7 days","14 days","1 month","2 months","3 months","6 month
 let metaWindow = 2;
 let metaExpanded = false;
 let saveMessage = "";
+let accountStorage;
+function connectAccountStorage(storage) { accountStorage = storage; }
+function replaceAccountState(next) {
+  if (editor.open) editor.close();
+  state = next;
+  render();
+}
 function persist(next) {
   try {
-    localStorage.setItem(key,JSON.stringify(next));
+    if (accountStorage) accountStorage.save(next);
+    else localStorage.setItem(key,JSON.stringify(next));
     state = next;
     saveMessage = "";
     return true;
-  } catch {
-    saveMessage = "Your browser could not save this change.";
+  } catch (error) {
+    saveMessage = accountStorage ? error.message : "Your browser could not save this change.";
     return false;
   }
 }
@@ -905,5 +931,10 @@ window.MagicDashTools.loadFeed().then(updated=>{
   if (updated && location.hash==="#decks" && !editor.open && !app.contains(document.activeElement)) showDecks();
 });
 
+</script>
+<script>
+if (window.magicDashAccountConfig?.url && window.magicDashAccountConfig.publishableKey) {
+  import("./accounts/sync.js");
+}
 </script>
 </body></html>
