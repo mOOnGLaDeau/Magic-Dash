@@ -1,3 +1,5 @@
-// Set these to the Supabase project URL and publishable key after provisioning.
 // This file is public. Use only the publishable key.
-window.magicDashAccountConfig = {url: "", publishableKey: ""};
+window.magicDashAccountConfig = {
+  url: "https://qvjetfsfceiufknwvtmq.supabase.co",
+  publishableKey: "sb_publishable_JXYRKnMq5vM2eQUNB_OdFA_SA1EfzuJ"
+};
