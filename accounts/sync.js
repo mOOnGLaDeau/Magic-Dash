@@ -1,10 +1,12 @@
 const config = window.magicDashAccountConfig;
 if (config?.url && config.publishableKey) {
-  startAccounts().catch(error => console.error("Magic Dash accounts could not start", error));
+  startAccounts().catch(() => { accountPhase = "unavailable"; render(); });
 }
 
 async function startAccounts() {
   const accountButton = document.querySelector("#account-button");
+  const menu = document.querySelector("#account-menu");
+  const manage = document.querySelector("#account-manage");
   const identity = document.querySelector("#account-identity");
   const logout = document.querySelector("#account-logout");
   const deleteAccount = document.querySelector("#account-delete");
@@ -64,9 +66,11 @@ async function startAccounts() {
 
   function drawHeader() {
     const user = active?.user;
-    identity.hidden = logout.hidden = deleteAccount.hidden = !user;
+    menu.hidden = !user;
+    accountButton.hidden = Boolean(user);
+    if (!user) menu.open = false;
     identity.textContent = user ? "Logged in as " + (user.user_metadata?.name?.trim?.() || user.email) : "";
-    accountButton.textContent = !user ? "Sign in" : active.failed || active.conflict ? "Account · Sync issue" : "Account";
+    identity.title = identity.textContent;
   }
 
   function showMode(next) {
@@ -82,7 +86,8 @@ async function startAccounts() {
     drawHeader();
     title.textContent = active && !["password","delete"].includes(mode) ? "Your account" : {
       delete: "Delete account",
-      signin: "Sign in", signup: "Create account", reset: "Reset password", password: "Set a new password"
+      signin: accountIntent?.reason ? "Sign in to " + accountIntent.reason : "Sign in",
+      signup: "Create account", reset: "Reset password", password: "Set a new password"
     }[mode];
     if (!authReady) {
       status.textContent = accountMessage || "Connecting to accounts…";
@@ -183,6 +188,7 @@ async function startAccounts() {
     profile.saving = true;
     profile.failed = false;
     setStatus("Saving to your account…");
+    setAccountSync("Saving to your account…");
     const sent = profile.record;
     try {
       const revision = sent.revision + 1;
@@ -193,17 +199,20 @@ async function startAccounts() {
       if (active !== profile) return;
       if (error?.code === "23505" || (!error && !data)) {
         profile.conflict = true;
+        setAccountSync("Another device saved changes. This device has an unsynced copy.", "Resolve sync", openAccount);
         setStatus("Another device saved changes. Download this device’s unsynced data before discarding it and reloading.");
       } else {
         if (error) throw error;
         const dirty = profile.record !== sent;
         store(profile, {...profile.record, revision: data.revision, dirty});
         setStatus(dirty ? "Saving to your account…" : "Saved to your account.");
+        setAccountSync(dirty ? "Saving to your account…" : "Saved to your account.");
       }
     } catch {
       if (active === profile) {
         profile.failed = true;
         setStatus("Changes are saved in this browser. Account sync failed.");
+        setAccountSync("Saved on this device. Account sync failed.", "Retry sync", () => retry(profile));
       }
     } finally {
       profile.saving = false;
@@ -218,6 +227,11 @@ async function startAccounts() {
     if (profile.loading || profile.saving) return;
     profile.loading = true;
     profile.failed = false;
+    if (!profile.ready) {
+      accountPhase = "loading";
+      setAccountSync();
+      render();
+    }
     setStatus("Loading your account data…");
     try {
       const {data, error} = await client.from(table).select("revision,data").eq("user_id", profile.user.id).maybeSingle();
@@ -232,14 +246,26 @@ async function startAccounts() {
         profile.conflict = false;
       }
       profile.ready = true;
+      accountPhase = "ready";
       replaceAccountState(profile.record.data);
       setStatus(profile.conflict ? "Another device saved changes. Download this device’s unsynced data before discarding it and reloading." :
         profile.record.dirty ? "Saving to your account…" : "Account data is up to date.");
-      if (profile.record.dirty) void sync(profile);
+      if (profile.conflict) setAccountSync("Another device saved changes. This device has an unsynced copy.", "Resolve sync", openAccount);
+      else if (profile.record.dirty) void sync(profile);
+      else if (discard) setAccountSync("Account data reloaded.");
+      if (accountIntent && !profile.conflict && mode !== "password") {
+        const {resume} = accountIntent;
+        accountIntent = undefined;
+        if (dialog.open) dialog.close();
+        queueMicrotask(resume);
+      }
     } catch {
       if (active !== profile) return;
       profile.failed = true;
+      accountPhase = "unavailable";
+      render();
       setStatus("Could not load your account data. Retry sync to reconnect.");
+      setAccountSync("Your account data could not load.", "Retry sync", () => retry(profile));
     } finally {
       profile.loading = false;
       if (active === profile) draw();
@@ -252,12 +278,14 @@ async function startAccounts() {
   }
 
   function switchUser(user) {
-    if (active?.user.id === user?.id) return;
+    if (active?.user.id === user?.id && accountPhase !== "checking") return;
     if (active?.record && !active.record.dirty) {
       try { localStorage.removeItem(active.key); } catch {}
     }
     if (!user?.email_confirmed_at) {
       active = undefined;
+      accountPhase = "signed-out";
+      setAccountSync();
       connectAccountStorage(undefined);
       replaceAccountState(empty());
       setStatus("");
@@ -270,6 +298,8 @@ async function startAccounts() {
       if (profile.record) profile.record.data = {...empty(), ...profile.record.data};
     } catch {}
     active = profile;
+    accountPhase = "loading";
+    setAccountSync();
     connectAccountStorage({
       id: user.id,
       canEdit: () => profile.ready && !profile.conflict && mode !== "delete",
@@ -297,20 +327,39 @@ async function startAccounts() {
 
   accountButton.hidden = false;
   function openAccount() {
+    menu.open = false;
     draw();
     if (!dialog.open) dialog.showModal();
     (fields.querySelector("input") || close).focus();
   }
   accountButton.addEventListener("click", openAccount);
+  manage.addEventListener("click", openAccount);
+  document.addEventListener("click", event => {
+    if (!menu.contains(event.target)) menu.open = false;
+  });
+  menu.addEventListener("keydown", event => {
+    if (event.key === "Escape" && menu.open) {
+      menu.open = false;
+      menu.querySelector("summary").focus();
+    }
+  });
   logout.addEventListener("click", () => {
-    void submitAuth(() => client.auth.signOut({scope: "local"}), () => switchUser(undefined));
+    menu.open = false;
+    void submitAuth(() => client.auth.signOut({scope: "local"}), () => {
+      switchUser(undefined);
+      accountButton.focus();
+    }).then(() => { if (active) openAccount(); });
   });
   deleteAccount.addEventListener("click", () => {
     if (busy) return;
     openAccount();
     showMode("delete");
   });
-  dialog.addEventListener("close", () => { if (mode === "delete" && !busy) mode = "signin"; });
+  dialog.addEventListener("close", () => {
+    accountIntent = undefined;
+    if (mode === "delete" && !busy) mode = "signin";
+    if (active && document.activeElement === document.body) menu.querySelector("summary").focus();
+  });
   dialog.addEventListener("cancel", event => { if (busy && mode === "delete") event.preventDefault(); });
   close.addEventListener("click", () => { if (!busy || mode !== "delete") dialog.close(); });
   form.addEventListener("submit", event => {
@@ -370,6 +419,8 @@ async function startAccounts() {
       }, 0);
     });
   } catch {
+    accountPhase = "unavailable";
+    render();
     setStatus("Accounts could not connect. Reload the page to try again.");
   }
 }

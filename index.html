@@ -80,21 +80,37 @@
   .two { grid-template-columns: minmax(0, 1fr); }
   .footer .frame { flex-direction: column; gap: 4px; }
 }
-@media (max-width: 540px) {
-  .top .frame { flex-direction: column; align-items: stretch; gap: 0; padding-block: 4px 8px; }
-  .brand { align-self: flex-start; font-size: 19px; }
-  .nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-  .nav a { border-color: var(--line); }
+@media (max-width: 760px) {
+  .top .frame { display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;padding-block:4px 8px; }
+  .brand { font-size:17px;white-space:nowrap; }
+  .nav { grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px; }
+  .nav a { border-color:var(--line);padding-inline:3px;text-align:center;line-height:1.2; }
+  #account-controls { justify-self:end; }
 }
 
 #account-controls [hidden]{display:none}
-#account-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-#account-identity{overflow-wrap:anywhere}
+#account-controls{min-width:0;max-width:100%}
+#account-menu{position:relative;margin:0}
+#account-menu summary{display:flex;gap:7px;align-items:center;padding:7px 10px;border:1px solid var(--line);border-radius:9px;color:var(--text);font-size:13px}
+#account-menu summary::after{content:"";flex:none;width:6px;height:6px;border:solid currentColor;border-width:0 1px 1px 0;transform:rotate(45deg);margin:0 2px 3px}
+#account-menu summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+#account-identity{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:24ch}
+#account-menu-actions{position:absolute;z-index:5;inset-inline-end:0;top:calc(100% + 5px);display:grid;gap:6px;min-width:160px;padding:8px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+#account-menu-actions .button{justify-content:flex-start}
+#account-menu-actions #account-delete{color:#ffb7af}
 #account-fields,#account-actions{display:flex;gap:8px}
 #account-fields{flex-direction:column;overflow-wrap:anywhere}
 #account-actions{flex-wrap:wrap}
 #account-close{justify-self:start}
-@media(max-width:540px){#account-button{align-self:flex-end;margin-top:6px}}
+.account-sync{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 14px;color:var(--muted)}
+.account-sync:has(p:empty){display:none}
+.deck-sections{display:grid;gap:30px}
+.deck-sections .heading{flex-direction:row;align-items:center}
+.metric-source{display:block;color:var(--muted);font-weight:400;font-size:12px;line-height:1.35}
+.deck-sections .heading h2,.deck-sections .panel h2{font-size:clamp(24px,3vw,30px);letter-spacing:-.03em}
+.deck-sections .panel h2{margin-bottom:14px}
+.shop-bulk-actions{margin-top:12px}
+#shop-open-next[hidden],#account-sync-action[hidden]{display:none}
 
 .meta-owned .tag{margin-top:3px;color:var(--owned-text);background:#47351f;border-color:#806139}
 .meta-expand{margin:10px 0;width:100%}
@@ -110,6 +126,7 @@
 .meta-window-labels span[aria-current=true]{color:var(--text);font-weight:700}
 .combined-meta table{width:100%;min-width:270px}
 .combined-meta th:not(:first-child),.combined-meta td:not(:first-child){text-align:right;white-space:nowrap}
+.combined-meta th:not(:first-child){white-space:normal;min-width:60px}
 .combined-meta td:first-child{overflow-wrap:anywhere}
 .meta-archetype-link{text-decoration-thickness:1px;text-underline-offset:3px}
 .combined-meta tr.meta-owned{background:var(--owned-surface);color:var(--owned-text)}
@@ -152,13 +169,18 @@
 <body>
 <header class="top"><div class="frame">
 <a class="brand" href="#events"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="m12 12 8-8"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/></svg></span>Magic Dash</a>
-<nav class="nav" aria-label="Main"><a href="#events">Events</a><a href="#decks">Deck tracker</a><a href="#buy">Find Cards</a><a href="#play">Play</a></nav>
 <div id="account-controls">
-<span class="small" id="account-identity" hidden></span>
 <button class="button" type="button" id="account-button">Sign in</button>
-<button class="button" type="button" id="account-logout" hidden>Log out</button>
-<button class="button" type="button" id="account-delete" hidden>Delete account</button>
+<details id="account-menu" hidden>
+<summary><span id="account-identity"></span></summary>
+<div id="account-menu-actions">
+<button class="button" type="button" id="account-manage">Account settings</button>
+<button class="button" type="button" id="account-logout">Log out</button>
+<button class="button" type="button" id="account-delete">Delete account</button>
 </div>
+</details>
+</div>
+<nav class="nav" aria-label="Main"><a href="#events">Events</a><a href="#decks">Deck tracker</a><a href="#buy">Find Cards</a><a href="#play">Play</a></nav>
 <span class="zone tag">Brisbane · AEST</span>
 </div></header>
 <main class="frame">
@@ -173,6 +195,7 @@
 </aside>
 </section>
 <div class="work" id="app"></div>
+<div class="account-sync" id="account-sync"><p class="small" id="account-sync-message" role="status"></p><button class="button" type="button" id="account-sync-action" hidden></button></div>
 <p id="app-feedback" class="visually-hidden" role="status"></p>
 </main>
 <footer class="footer"><div class="frame"><span>Magic Dash · Magic: The Gathering tracker</span><span>All event times shown in Brisbane time (AEST)</span></div></footer>
@@ -294,12 +317,33 @@ let metaWindow = 2;
 let metaExpanded = false;
 let saveMessage = "";
 let accountStorage;
+let accountPhase = "checking";
+let accountIntent;
+const accountSync = document.querySelector("#account-sync");
 function connectAccountStorage(storage) { accountStorage = storage; }
-function requireAccount() {
+function requireAccount(reason, resume) {
   if (accountStorage?.canEdit()) return true;
-  announce(accountStorage ? "Open Account to check your sync status." : "Sign in to save to Magic Dash.");
+  if (resume && (!accountStorage || accountPhase === "loading")) accountIntent = {reason,resume};
   document.querySelector("#account-button").click();
   return false;
+}
+function setAccountSync(message="", action="", callback) {
+  accountSync.querySelector("#account-sync-message").textContent = message;
+  const control = accountSync.querySelector("#account-sync-action");
+  control.hidden = !action;
+  control.textContent = action;
+  control.onclick = callback || null;
+}
+function placeAccountSync(target=app.querySelector(".heading") || app.firstElementChild) {
+  if (target?.isConnected) target.after(accountSync);
+  else app.after(accountSync);
+}
+function accountPlaceholder(subject) {
+  if (accountPhase === "ready") return "";
+  if (["checking","loading"].includes(accountPhase)) return '<p class="empty muted" role="status">Loading '+subject+'…</p>';
+  const failed = accountPhase === "unavailable";
+  return '<div class="empty"><p class="muted">'+(failed ? "Your account data could not load." : "Sign in to view and save "+subject+".")+'</p>'+
+    button(failed ? "Account settings" : "Sign in","account","",true)+'</div>';
 }
 function replaceAccountState(next) {
   if (editor.open) editor.close();
@@ -543,9 +587,12 @@ function showDecks() {
   const owned = new Set(state.decks.filter(deck=>deck.format===metaFormat).map(deck=>joinKey(deck.archetype)));
   const limit = Math.min(50,rows.length);
   const displayed = rows.slice(0,metaExpanded?limit:10);
+  const metricHeading = (label, metric) => '<th scope="col">'+label+'<span class="metric-source">'+
+    (metric ? escapeText(metric.source+" · "+metric.window) : "Unavailable for this window")+'</span></th>';
   const table = displayed.length
     ? '<div class="table-wrap combined-meta"><table id="meta-rankings"><caption class="visually-hidden">Metagame share, win rate and match count</caption>'+
-      '<thead><tr><th scope="col">Archetype</th><th scope="col">'+(share?.source==="MTGGoldfish"?"Ref. share":"Share")+'</th><th scope="col">Win rate</th><th scope="col">Matches</th></tr></thead><tbody>'+
+      '<thead><tr><th scope="col">Archetype</th>'+metricHeading(share?.source==="MTGGoldfish"?"Reference share":"Share",share)+
+      metricHeading("Win rate",rates)+metricHeading("Matches",rates)+'</tr></thead><tbody>'+
       displayed.map((row,index)=>{
         const yours = owned.has(joinKey(row.name));
         const name = link(goldfishArchetypeUrl(metaFormat,row.name),row.name,"meta-archetype-link") || escapeText(row.name);
@@ -561,10 +608,6 @@ function showDecks() {
   const windowSlider = '<label class="meta-window">Time window <output id="meta-window-value" for="meta-window">'+windowLabel+'</output>'+
     '<input id="meta-window" type="range" min="0" max="5" step="1" value="'+metaWindow+'" aria-valuetext="'+windowLabel+'"></label>'+
     '<div class="meta-window-labels" aria-hidden="true">'+metaWindows.map((label,index)=>'<span aria-current="'+(metaWindow===index)+'">'+label+'</span>').join("")+'</div>';
-  const shareNote = share?.source==="MTGGoldfish"
-    ? "MTGGoldfish reference share · "+share.window+". The source’s exact window is unverified."
-    : share ? share.source+" share · "+share.window : "Metagame share unavailable for this window.";
-  const rateNote = rates ? rates.source+" win rate · "+rates.window : "Match win rate unavailable for this window.";
   const sourceLinks = metaFormat==="7-Point Highlander"
     ? link(meta[metaFormat]["TopDeck.gg"].url,"TopDeck.gg ↗")
     : link(meta[metaFormat].MTGGoldfish.url,"MTGGoldfish ↗")+link(rates?.url || "https://mtgdecks.net/"+metaFormat+"/winrates","MTGDecks.net ↗");
@@ -572,14 +615,15 @@ function showDecks() {
   const savedSnapshots = saved.length ? '<details><summary>Saved snapshots ('+saved.length+')</summary>'+saved.map(snapshot=>
     '<details><summary>'+escapeText(snapshot.window+" · "+snapshot.source)+'</summary><div class="table-wrap"><table><thead><tr><th>Archetype</th><th>Share</th></tr></thead><tbody>'+
     snapshot.rows.map(row=>'<tr><td>'+escapeText(row[0])+'</td><td>'+percentage(row[1])+'</td></tr>').join("")+'</tbody></table></div></details>').join("")+'</details>' : "";
-  app.innerHTML = '<div class="heading"><div><p class="eyebrow">02 / Deck tracker</p><h2>Your decks</h2></div>'+button("+ Add deck","deck","",true)+'</div><div class="grid">'+
-    '<section class="stack" aria-label="Saved decks">'+(state.decks.map(deckCard).join("") || '<div class="empty"><h3>Start with a deck you play</h3><p class="muted">Save your list and archetype, then log matches to see where your results are strong and which popular matchups need more games.</p>'+button("+ Add your first deck","deck","",true)+'</div>')+
-    '<p class="small muted">Decks and matches are saved in this browser. Win and loss percentages use all logged matches, including draws.</p></section>'+
-    '<aside class="panel"><p class="eyebrow">Metagame snapshots</p><h3>What’s being played</h3>'+
+  app.innerHTML = '<div class="deck-sections"><section aria-labelledby="your-decks-title"><div class="heading"><h2 id="your-decks-title">Your decks</h2>'+
+    (accountPhase==="ready" && state.decks.length ? button("+ Add deck","deck","",true) : "")+'</div><div class="stack">'+
+    (accountPlaceholder("your decks") || state.decks.map(deckCard).join("") || '<div class="empty"><h3>Start with a deck you play</h3><p class="muted">Save a deck and log matches to track your results by opponent archetype.</p>'+button("+ Add your first deck","deck","",true)+'</div>')+
+    (accountPhase==="ready" ? '<p class="small muted">Decks and matches sync to your account. Win and loss percentages include draws in the total.</p>' : "")+'</div></section>'+
+    '<section class="panel" aria-labelledby="metagame-title"><h2 id="metagame-title">Metagame</h2>'+
     '<label>Format<select id="meta-format">'+options(formats,metaFormat)+'</select></label>'+windowSlider+
-    '<p class="small muted" role="status">'+escapeText(shareNote)+'<br>'+escapeText(rateNote)+'</p>'+table+expand+
-    '<div class="actions">'+sourceLinks+button("Add snapshot","snapshot")+'</div>'+savedSnapshots+'</aside></div>'+
-    window.MagicDashTools.recentTournaments(metaFormat);
+    (share?.source==="MTGGoldfish" ? '<p class="small muted">Exact dates for MTGGoldfish reference share are unverified.</p>' : "")+table+expand+
+    '<div class="actions">'+sourceLinks+button("Add snapshot","snapshot")+'</div>'+savedSnapshots+'</section>'+
+    window.MagicDashTools.recentTournaments(metaFormat)+'</div>';
 }
 const resultLabels = {W:"Win",L:"Loss",D:"Draw"};
 function playEventCard(event) {
@@ -609,7 +653,7 @@ function showPlay() {
     (upcoming(a)?eventDate(a).localeCompare(eventDate(b)):eventDate(b).localeCompare(eventDate(a))));
   app.innerHTML='<div class="heading"><h2>Your events</h2>'+
     '<a class="button" href="#events">Find events</a></div><p class="small" id="compete-status"></p>'+
-    '<section class="stack play-events" aria-label="Your events">'+(entries.map(playEventCard).join("") ||
+    '<section class="stack play-events" aria-label="Your events">'+(accountPlaceholder("your Play events") || entries.map(playEventCard).join("") ||
     '<div class="empty"><h3>No events in Play yet</h3><p class="muted">Choose Add to Play on an upcoming event to start logging matches here.</p></div>')+'</section>';
 }
 const playRoute = () => location.hash==="#play" || location.hash.startsWith("#play/");
@@ -628,9 +672,9 @@ function render() {
   const page = playRoute() ? "#play" : ["#decks","#buy"].includes(location.hash) ? location.hash : "#events";
   const headings = {
     "#events":["","Events",""],
-    "#decks":["Deck tracker / Match results","Deck Tracker","Track your results against the decks people are bringing to tournaments."],
-    "#buy":["03 / Magic Dash","Find Cards","Search for a card and open the results at Australian card stores."],
-    "#play":["Play / Match log","Play","Log each round at the events you’re competing in and review past results."]
+    "#decks":["","Deck Tracker",""],
+    "#buy":["","Find Cards","Search for a card at Australian stores."],
+    "#play":["","Play",""]
   };
   const [label,title,copy] = headings[page];
   document.querySelector("#page-hero").classList.toggle("hero-events",page==="#events");
@@ -649,6 +693,7 @@ function render() {
   else if (page==="#buy") window.MagicDashTools.renderBuy(app);
   else if (page==="#play") showPlay();
   else showEvents();
+  placeAccountSync();
 }
 const input = (label,name,value="",type="text",attrs="")=>'<label>'+label+'<input type="'+type+'" name="'+name+'" value="'+escapeText(value)+'" '+attrs+'></label>';
 const select = (label,name,values,value)=>'<label>'+label+'<select name="'+name+'">'+options(values,value)+'</select></label>';
@@ -661,7 +706,8 @@ function dialog(title,fields,onSubmit,onRemove,afterSave) {
     render();
     const destination = afterSave?.() || actionControl(action,id) || pageHeading();
     destination.focus();
-    const message = removed ? "Entry removed. Syncing to your account." : afterSave ? "Match recorded. Syncing to your account." : "Change recorded. Syncing to your account.";
+    placeAccountSync(destination.closest("article")?.querySelector(".heading") || app.firstElementChild);
+    const message = removed ? "Entry removed." : afterSave ? "Match recorded." : "Change recorded.";
     if (afterSave) app.querySelector("#compete-status").textContent=message;
     announce(message);
   };
@@ -806,11 +852,12 @@ function toggleCompeting(id) {
     return;
   }
   render();
-  const message = competing ? "Event added to Play. Syncing to your account." :
-    entry.matches.length ? "Competing cleared. Your matches are saved in Play." : "Event removed from Play.";
+  const message = competing ? "Event added to Play." :
+    entry.matches.length ? "Competing cleared. Your matches remain in Play." : "Event removed from Play.";
   app.querySelector("#compete-status").textContent=message;
   if (playRoute()) announce(message);
   const control = actionControl("compete",id);
+  placeAccountSync(control?.parentElement || app.firstElementChild);
   const playLink = competing && control?.parentElement.querySelector('a[href^="#play/"]');
   (playLink || control || pageHeading()).focus();
 }
@@ -893,7 +940,15 @@ app.addEventListener("click",event=>{
   const control = event.target.closest("button[data-action]");
   if (!control) return;
   const {action,id} = control.dataset;
-  if (["deck","match","play-match","compete","event","snapshot"].includes(action) && !requireAccount()) return;
+  if (action === "account") { document.querySelector("#account-button").click(); return; }
+  const reasons = {deck:"save a deck", match:"log a match", "play-match":"log a match",
+    compete:"add this event to Play", event:"save an event", snapshot:"save a snapshot"};
+  if (reasons[action] && !requireAccount(reasons[action], () => {
+    const next = actionControl(action,id);
+    if (!next || next.textContent !== control.textContent) { pageHeading().focus(); return; }
+    next.focus();
+    next.click();
+  })) return;
   switch (action) {
     case "deck": editDeck(id); break;
     case "match": editMatch(id); break;
@@ -904,6 +959,7 @@ app.addEventListener("click",event=>{
     case "expand-meta":
       metaExpanded = !metaExpanded;
       showDecks();
+      placeAccountSync();
       app.querySelector('[data-action="expand-meta"]').focus();
       break;
   }
@@ -921,6 +977,7 @@ app.addEventListener("change",event=>{
     if (id==="event-category") category=value;
     if (id==="event-format") filter=value;
     showEvents();
+    placeAccountSync();
     document.getElementById(id).focus();
     return;
   }
@@ -929,22 +986,27 @@ app.addEventListener("change",event=>{
   else metaWindow = Number(value);
   metaExpanded = false;
   showDecks();
+  placeAccountSync();
   document.getElementById(id).focus();
 });
 window.addEventListener("hashchange",()=>{
+  accountIntent = undefined;
   if (editor.open) editor.close();
   render();
   focusRoute();
 });
 render();
 window.MagicDashTools.loadFeed().then(updated=>{
-  if (updated && location.hash==="#decks" && !editor.open && !app.contains(document.activeElement)) showDecks();
+  if (updated && location.hash==="#decks" && !editor.open && !app.contains(document.activeElement)) render();
 });
 
 </script>
 <script>
 if (window.magicDashAccountConfig?.url && window.magicDashAccountConfig.publishableKey) {
-  import("./accounts/sync.js");
+  import("./accounts/sync.js").catch(() => { accountPhase = "unavailable"; render(); });
+} else {
+  accountPhase = "unavailable";
+  render();
 }
 </script>
 </body></html>

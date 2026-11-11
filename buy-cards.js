@@ -186,10 +186,12 @@
       suggest.innerHTML="";
       input.value=query=card;
       results.innerHTML='<div class="shop-result-heading"><h3 tabindex="-1">'+escape(card)+'</h3><div class="actions">'+
-        '<button type="button" class="button primary" id="shop-open-all">Open all stores ('+stores.length+')</button>'+
-        '<button type="button" class="button" id="shop-open-next" hidden>Open next store</button>'+
         '<button type="button" class="button" id="shop-watch-card">Watch card</button></div></div>'+
-        '<p class="small" id="shop-open-status" role="status"></p><p class="small" id="shop-watch-status" role="status"></p>'+storeLinks(card);
+        '<p class="small muted" id="shop-watch-hint">Watch card saves it to your account. Nightly scans are optional in Watchlist.</p>'+
+        '<p class="small" id="shop-watch-status" role="status"></p>'+storeLinks(card)+
+        '<div class="actions shop-bulk-actions"><button type="button" class="button" id="shop-open-all">Open all stores ('+stores.length+')</button>'+
+        '<button type="button" class="button" id="shop-open-next" hidden>Open next store</button></div>'+
+        '<p class="small" id="shop-open-status" role="status"></p>';
       searchStatus.textContent=stores.length+" store searches ready for "+card+".";
       if (moveFocus) results.querySelector("h3").focus();
       const openStatus=results.querySelector("#shop-open-status");
@@ -222,12 +224,19 @@
       const updateLabel=()=>{watchButton.textContent=isWatched()?"Stop watching":"Watch card";};
       updateLabel();
       watchButton.onclick=()=>{
-        if (!requireAccount()) return;
         const watch=!isWatched();
+        if (!requireAccount(watch ? "watch "+card : "stop watching "+card, () => {
+          if (mode!=="search" || query!==card) return;
+          const next=app.querySelector("#shop-watch-card");
+          if (!next) return;
+          next.focus();
+          if (next.textContent===(watch ? "Watch card" : "Stop watching")) next.click();
+        })) return;
         try {
           setWatchlist(watch ? mergeWatchlists(state.watchlist,[card]) : state.watchlist.filter(name=>keyFor(name)!==keyFor(card)));
           updateLabel();
-          status.textContent=watch ? "Card added. Syncing to your account." : "Card removed. Syncing to your account.";
+          status.textContent=watch ? "Card added to Watchlist." : "Card removed from Watchlist.";
+          placeAccountSync(status);
         } catch (error) { status.textContent=error.message; }
       };
     };
@@ -271,8 +280,8 @@
       '<p id="shop-watch-status" class="small" role="status"></p><div id="shop-watched-cards"></div>';
     const status=content.querySelector("#shop-watch-status");
     const list=content.querySelector("#shop-watched-cards");
-    if (!accountStorage) {
-      status.textContent="Sign in to view and save your watchlist.";
+    if (accountPhase!=="ready") {
+      list.innerHTML=accountPlaceholder("your watchlist");
       return;
     }
     const account=accountStorage;
@@ -312,7 +321,11 @@
       button.onclick=()=>{
         if (!requireAccount()) return;
         const card=entries[Number(button.dataset.watchRemove)].card;
-        try { setWatchlist(state.watchlist.filter(name=>keyFor(name)!==keyFor(card))); renderWatches(content); }
+        try {
+          setWatchlist(state.watchlist.filter(name=>keyFor(name)!==keyFor(card)));
+          void renderWatches(content);
+          placeAccountSync(content.querySelector("h3"));
+        }
         catch (error) { status.textContent=error.message; }
       };
     });
