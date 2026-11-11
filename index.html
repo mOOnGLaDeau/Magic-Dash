@@ -148,7 +148,7 @@
 </div></header>
 <main class="frame">
 <section class="hero" id="page-hero">
-<div class="hero-intro"><p id="hero-label" class="eyebrow"></p><h1 id="hero-title"></h1><p id="hero-copy"></p></div>
+<div class="hero-intro"><p id="hero-label" class="eyebrow"></p><h1 id="hero-title" tabindex="-1"></h1><p id="hero-copy"></p></div>
 <aside class="scan-panel" id="scan-panel" aria-label="New Events Added" hidden>
   <p id="scan-status" class="small muted">New Events Added · None yet</p>
   <details id="scan-details" hidden>
@@ -158,6 +158,7 @@
 </aside>
 </section>
 <div class="work" id="app"></div>
+<p id="app-feedback" class="visually-hidden" role="status"></p>
 </main>
 <footer class="footer"><div class="frame"><span>Magic Dash · Magic: The Gathering tracker</span><span>All event times shown in Brisbane time (AEST)</span></div></footer>
 <dialog id="editor" aria-labelledby="editor-title"></dialog>
@@ -313,8 +314,9 @@ function eventCard(item) {
     link(item.url,item.scope==="local"?"Event / registration ↗":"Event details ↗")+
     link(item.stream,(item.streamLabel || (item.custom ? "Stream" : "Official stream channel"))+" ↗",item.start?"button primary":"button")+
     link(calendarUrl(item),"+ Google Calendar")+
-    '<button type="button" class="button competing" data-action="compete" data-id="'+escapeText(item.id)+'" aria-pressed="'+competing+'">Competing</button>'+
-    (competing?'<a class="button" href="#play">Open Play</a>':"")+(item.custom ? button("Edit","event",item.id) : "")+'</div></div></article>';
+    (competing?'<span class="tag competing">Competing</span><a class="button primary" href="#play/'+encodeURIComponent(item.id)+'">Open in Play</a>'+
+      button("Stop competing","compete",item.id):button("Add to Play","compete",item.id))+
+    (item.custom ? button("Edit","event",item.id) : "")+'</div></div></article>';
 }
 
 const scanPanel = document.querySelector("#scan-panel");
@@ -553,7 +555,7 @@ function playEventCard(event) {
   const dateRange = event.through && event.through!==eventDate(event) ? " – "+dayText(localDate(event.through)) : "";
   const record = statsFor(event.matches);
   return '<article class="panel play-event'+(event.competing && upcoming?" is-competing":"")+'"><div class="heading"><div>'+
-    '<div class="tags">'+badge+'<span class="tag">'+escapeText(event.format)+'</span></div><h3>'+escapeText(event.title)+'</h3>'+
+    '<div class="tags">'+badge+'<span class="tag">'+escapeText(event.format)+'</span></div><h3 id="play-event-'+escapeText(encodeURIComponent(event.id))+'" tabindex="-1">'+escapeText(event.title)+'</h3>'+
     '<p class="small muted">'+escapeText(date+dateRange+" · "+event.venue)+'</p></div><div class="actions">'+
     button("+ Log match","play-match",encodeURIComponent(event.id),true)+(event.competing && upcoming ? button("Stop competing","compete",event.id):"")+'</div></div>'+
     (event.matches.length ? '<p class="small">Event record <strong>'+record.text+'</strong> W-L-D</p><ul class="play-matches">'+
@@ -570,13 +572,25 @@ function showPlay() {
   const upcoming = event => event.competing && isUpcoming(event,now);
   const entries = [...state.playEvents].sort((a,b)=>Number(upcoming(b))-Number(upcoming(a)) ||
     (upcoming(a)?eventDate(a).localeCompare(eventDate(b)):eventDate(b).localeCompare(eventDate(a))));
-  app.innerHTML='<div class="heading"><div><p class="eyebrow">04 / Match logging</p><h2>Your events</h2></div>'+
-    '<a class="button" href="#events">Find events</a></div><p class="small" id="compete-status" role="status"></p>'+
+  app.innerHTML='<div class="heading"><h2>Your events</h2>'+
+    '<a class="button" href="#events">Find events</a></div><p class="small" id="compete-status"></p>'+
     '<section class="stack play-events" aria-label="Your events">'+(entries.map(playEventCard).join("") ||
-    '<div class="empty"><h3>No events in Play yet</h3><p class="muted">Choose Competing on an upcoming event to start logging matches here.</p></div>')+'</section>';
+    '<div class="empty"><h3>No events in Play yet</h3><p class="muted">Choose Add to Play on an upcoming event to start logging matches here.</p></div>')+'</section>';
+}
+const playRoute = () => location.hash==="#play" || location.hash.startsWith("#play/");
+const pageHeading = () => document.querySelector("#hero-title");
+function focusRoute() {
+  const eventHeading = location.hash.startsWith("#play/") && document.getElementById("play-event-"+location.hash.slice(6));
+  (eventHeading || pageHeading()).focus();
+}
+function actionControl(action,id) {
+  return [...app.querySelectorAll("[data-action]")].find(control=>control.dataset.action===action && control.dataset.id===id);
+}
+function announce(message) {
+  document.querySelector("#app-feedback").textContent=message;
 }
 function render() {
-  const page = ["#decks","#buy","#play"].includes(location.hash) ? location.hash : "#events";
+  const page = playRoute() ? "#play" : ["#decks","#buy"].includes(location.hash) ? location.hash : "#events";
   const headings = {
     "#events":["","Events",""],
     "#decks":["Deck tracker / Match results","Deck Tracker","Track your results against the decks people are bringing to tournaments."],
@@ -585,11 +599,12 @@ function render() {
   };
   const [label,title,copy] = headings[page];
   document.querySelector("#page-hero").classList.toggle("hero-events",page==="#events");
-  const competing = state.playEvents.some(event=>event.competing && isUpcoming(event,Date.now()));
+  const competingCount = state.playEvents.filter(event=>event.competing && isUpcoming(event,Date.now())).length;
   document.querySelectorAll(".nav a").forEach(a=>{
     const active = a.hash === page;
     if (active) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");
-    a.classList.toggle("has-competing",a.hash==="#events" && competing);
+    a.classList.toggle("has-competing",a.hash==="#events" && competingCount>0);
+    if (a.hash==="#play") a.textContent=competingCount ? "Play ("+competingCount+")" : "Play";
   });
   document.querySelector("#hero-label").textContent = label;
   document.querySelector("#hero-title").textContent = title;
@@ -603,7 +618,18 @@ function render() {
 const input = (label,name,value="",type="text",attrs="")=>'<label>'+label+'<input type="'+type+'" name="'+name+'" value="'+escapeText(value)+'" '+attrs+'></label>';
 const select = (label,name,values,value)=>'<label>'+label+'<select name="'+name+'">'+options(values,value)+'</select></label>';
 const textarea = (label,name,value="",attrs="")=>'<label>'+label+'<textarea name="'+name+'" '+attrs+'>'+escapeText(value)+'</textarea></label>';
-function dialog(title,fields,onSubmit,onRemove) {
+function dialog(title,fields,onSubmit,onRemove,afterSave) {
+  const opener = document.activeElement;
+  const {action,id} = opener?.dataset || {};
+  const finish = removed => {
+    editor.close();
+    render();
+    const destination = afterSave?.() || actionControl(action,id) || pageHeading();
+    destination.focus();
+    const message = removed ? "Entry deleted." : afterSave ? "Match saved on this device." : "Saved on this device.";
+    if (afterSave) app.querySelector("#compete-status").textContent=message;
+    announce(message);
+  };
   editor.innerHTML = '<form><h2 id="editor-title">'+title+'</h2>'+fields+
     '<p class="small error notice" role="alert"></p><div class="actions"><button type="submit" class="button primary">Save</button><button type="button" class="button" id="cancel">Cancel</button>'+
     (onRemove ? '<button type="button" class="button" id="remove">Delete</button>' : "")+'</div></form>';
@@ -615,8 +641,7 @@ function dialog(title,fields,onSubmit,onRemove) {
     const fields = Object.fromEntries([...new FormData(form)].map(([name,value])=>[name,value.trim()]));
     try {
       if (!persist(onSubmit(fields))) throw Error(saveMessage);
-      editor.close();
-      render();
+      finish(false);
     } catch (error) { notice.textContent = error.message; }
   };
   if (onRemove) editor.querySelector("#remove").onclick = event=>{
@@ -625,8 +650,7 @@ function dialog(title,fields,onSubmit,onRemove) {
       return;
     }
     if (!persist(onRemove())) { notice.textContent=saveMessage; return; }
-    editor.close();
-    render();
+    finish(true);
   };
   editor.showModal();
 }
@@ -747,10 +771,13 @@ function toggleCompeting(id) {
     return;
   }
   render();
-  app.querySelector("#compete-status").textContent=competing ? "Event added to Play." :
+  const message = competing ? "Event added to Play on this device." :
     entry.matches.length ? "Competing cleared. Your matches are saved in Play." : "Event removed from Play.";
-  const controls = [...app.querySelectorAll('[data-action="compete"]')];
-  controls.find(control=>control.dataset.id===id)?.focus();
+  app.querySelector("#compete-status").textContent=message;
+  if (playRoute()) announce(message);
+  const control = actionControl("compete",id);
+  const playLink = competing && control?.parentElement.querySelector('a[href^="#play/"]');
+  (playLink || control || pageHeading()).focus();
 }
 function editPlayMatch(id) {
   const [encodedEventId,matchId] = id.split("/");
@@ -774,7 +801,8 @@ function editPlayMatch(id) {
       const deck = decks.find(item=>item.id===fields.deckId);
       return withMatches(replace(event.matches,{...fields,id:match?.id||uuid(),result:fields.result[0],
         deckId:deck?.id || "",deckName:deck?.name || ""}));
-    },match?()=>withMatches(event.matches.filter(item=>item.id!==matchId)):null);
+    },match?()=>withMatches(event.matches.filter(item=>item.id!==matchId)):null,
+    ()=>actionControl("play-match",encodedEventId));
 }
 function editEvent(id) {
   const event = state.customEvents.find(item=>item.id===id);
@@ -867,10 +895,14 @@ app.addEventListener("change",event=>{
   showDecks();
   document.getElementById(id).focus();
 });
-window.addEventListener("hashchange",render);
+window.addEventListener("hashchange",()=>{
+  if (editor.open) editor.close();
+  render();
+  focusRoute();
+});
 render();
 window.MagicDashTools.loadFeed().then(updated=>{
-  if (updated && location.hash==="#decks" && !editor.open) showDecks();
+  if (updated && location.hash==="#decks" && !editor.open && !app.contains(document.activeElement)) showDecks();
 });
 
 </script>

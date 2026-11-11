@@ -163,25 +163,31 @@
   function renderSearch(content) {
     content.innerHTML='<form id="card-shopping-search"><label for="shopping-card">Search for a card</label><div class="shop-search-row">'+
       '<input id="shopping-card" maxlength="120" value="'+escape(query)+'" autocomplete="off" placeholder="e.g. ocelot pr" aria-describedby="shop-hint">'+
-      '<button type="submit" class="button primary">Search</button></div><div id="shop-suggestions"></div>'+
+      '<button type="submit" class="button primary">Search</button></div><p id="shop-search-status" class="small muted" role="status"></p><div id="shop-suggestions" role="group" aria-label="Card suggestions"></div>'+
       '<p class="small muted" id="shop-hint">Choose a suggested card or enter its name, then open a store’s results in a new tab.</p></form>'+
       '<div id="shop-results"></div>';
     const form=content.querySelector("form");
     const input=content.querySelector("input");
     const suggest=content.querySelector("#shop-suggestions");
+    const searchStatus=content.querySelector("#shop-search-status");
     const results=content.querySelector("#shop-results");
     let debounce,controller;
-    const select=card=>{
-      if (keyFor(card).length<2) return;
+    const select=(card,moveFocus=false)=>{
+      if (keyFor(card).length<2) {
+        searchStatus.textContent="Enter at least two characters to search.";
+        return;
+      }
       clearTimeout(debounce);
       controller?.abort();
       suggest.innerHTML="";
       input.value=query=card;
-      results.innerHTML='<div class="shop-result-heading"><h3>'+escape(card)+'</h3><div class="actions">'+
+      results.innerHTML='<div class="shop-result-heading"><h3 tabindex="-1">'+escape(card)+'</h3><div class="actions">'+
         '<button type="button" class="button primary" id="shop-open-all">Open all stores ('+stores.length+')</button>'+
         '<button type="button" class="button" id="shop-open-next" hidden>Open next store</button>'+
         '<button type="button" class="button" id="shop-watch-card">Watch card</button></div></div>'+
         '<p class="small" id="shop-open-status" role="status"></p><p class="small" id="shop-watch-status" role="status"></p>'+storeLinks(card);
+      searchStatus.textContent=stores.length+" store searches ready for "+card+".";
+      if (moveFocus) results.querySelector("h3").focus();
       const openStatus=results.querySelector("#shop-open-status");
       const nextStore=results.querySelector("#shop-open-next");
       const openedUrls=new Set();
@@ -229,26 +235,33 @@
       clearTimeout(debounce);
       controller?.abort();
       suggest.innerHTML="";
+      searchStatus.textContent="";
       const text=query.trim();
       if (text.length<2) return;
-      controller=new AbortController();
-      const signal=AbortSignal.any([controller.signal,AbortSignal.timeout(7000)]);
+      const request=new AbortController();
+      controller=request;
       debounce=setTimeout(async ()=>{
+        const signal=AbortSignal.any([request.signal,AbortSignal.timeout(7000)]);
+        searchStatus.textContent="Looking up card names…";
         try {
           const names=await suggestions(text,signal);
           if (signal.aborted || !suggest.isConnected) return;
+          searchStatus.textContent=names.length ? names.length+(names.length===1?" suggestion":" suggestions")+" available." :
+            "No suggestions found. You can still search by card name.";
           for (const name of names) {
             const choice=document.createElement("button");
             choice.type="button";
             choice.className="button";
             choice.textContent=name;
-            choice.onclick=()=>select(name);
+            choice.onclick=()=>select(name,true);
             suggest.append(choice);
           }
-        } catch { /* Full-name search remains available. */ }
+        } catch {
+          if (!request.signal.aborted && suggest.isConnected) searchStatus.textContent="Card suggestions are unavailable. You can still search by card name.";
+        }
       },260);
     };
-    form.onsubmit=event=>{event.preventDefault(); select(input.value.trim());};
+    form.onsubmit=event=>{event.preventDefault(); select(input.value.trim(),true);};
     if (query) select(query);
   }
 
