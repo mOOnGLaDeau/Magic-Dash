@@ -111,7 +111,7 @@
       settingsOwner=owner;
       settings=owner ? read("scanner:"+owner,defaultSettings) : defaultSettings;
     }
-    app.innerHTML='<section class="panel shop-panel"><p class="eyebrow">Australian singles</p><div class="shop-switch" role="group" aria-label="Find Cards view">'+
+    app.innerHTML='<section class="panel shop-panel"><div class="shop-switch" role="group" aria-label="Find Cards view">'+
       '<button type="button" class="button" id="shop-search" aria-pressed="'+(mode==="search")+'">Search stores</button>'+
       '<button type="button" class="button" id="shop-watch" aria-pressed="'+(mode==="watch")+'">Watchlist</button></div>'+
       '<div id="shop-content"></div><details class="shop-settings"><summary>Live scanner settings</summary>'+
@@ -350,7 +350,7 @@
     const rows=[...online,...paper].filter(item=>item.format===format).sort((a,b)=>b.date.localeCompare(a.date));
     const last=tools.feed.checkedAt;
     const links=rows.map(item=>'<li><div>'+link(item.url,item.title)+'<small class="muted">'+escape(item.type)+'</small></div><time datetime="'+escape(item.date)+'">'+escape(item.date)+'</time></li>');
-    return '<section class="panel recent-results"><p class="eyebrow">Decklists and standings</p><h3>Recent '+escape(format)+' tournaments</h3>'+
+    return '<section class="panel recent-results"><h3>Recent '+escape(format)+' tournaments</h3>'+
       (last?'<p class="small muted">Last attempted refresh '+escape(time.format(new Date(last)))+' Brisbane time.'+
         (Object.values(tools.feed.status || {}).includes("previous data kept")?' Some sources kept their previous results.':'')+'</p>':
         '<p class="small muted">Showing saved results until the hourly feed is available.</p>')+

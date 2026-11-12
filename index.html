@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Brisbane Magic events, major broadcasts, and your decks in context.">
+<meta name="theme-color" content="#101713">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&amp;family=DM+Sans:wght@400;500;600;700&amp;display=swap">
 <meta name="theme-color" content="#111111">
 <title>Magic Dash — Magic event & deck tracker</title>
 <style>
@@ -104,7 +106,7 @@
 #account-close{justify-self:start}
 .account-sync{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 14px;color:var(--muted)}
 .account-sync:has(p:empty){display:none}
-.deck-sections{display:grid;gap:30px}
+.deck-sections{display:grid;grid-template-columns:minmax(0,1fr);gap:30px}
 .deck-sections .heading{flex-direction:row;align-items:center}
 .metric-source{display:block;color:var(--muted);font-weight:400;font-size:12px;line-height:1.35}
 .deck-sections .heading h2,.deck-sections .panel h2{font-size:clamp(24px,3vw,30px);letter-spacing:-.03em}
@@ -167,11 +169,104 @@
 .play-matches .play-match-notes{white-space:pre-wrap;overflow-wrap:anywhere}
 .play-matches .play-match-meta{margin:3px 0}
 .play-match-form-date{margin-bottom:6px}
+
+/* Shared visual system for Events, Deck Tracker, Find Cards and Play. */
+:root {
+  --bg:#101713;
+  --card:#18221c;
+  --line:#394a40;
+  --text:#f5f2e6;
+  --muted:#b8c4b9;
+  --accent:#f2d381;
+  --accent-surface:#352e1d;
+  --accent-edge:#a58a4e;
+  --owned-text:#f6d99d;
+  --owned-surface:#30291c;
+  --owned-edge:#ae8b50;
+  --radius:14px;
+  --control:#202c24;
+  --inset:#121b15;
+  --display:"Bricolage Grotesque","DM Sans",system-ui,sans-serif;
+}
+body {font-family:"DM Sans",system-ui,sans-serif}
+::selection {background:var(--accent);color:var(--bg)}
+h1,h2,h3,.brand {font-family:var(--display);letter-spacing:-.03em}
+h1,h2,h3 {text-wrap:balance}
+h2 {font-size:clamp(24px,3vw,30px)}
+a {text-underline-offset:.2em}
+a:hover,button:hover {filter:none}
+.top {background:var(--inset)}
+.top .frame {min-height:68px}
+.brand {font-weight:800}
+.logo {background:var(--accent);color:#211b0e}
+.nav {gap:5px}
+.nav a,.button,.pill,#account-menu summary {border-radius:8px}
+.nav a:hover,.button:hover,.pill:hover,#account-menu summary:hover {background:#29382e}
+.nav a[aria-current] {background:var(--accent-surface);color:var(--accent);border-color:var(--accent-edge)}
+.nav a.has-competing {color:#b9e7c8;background:#23372b;border-color:#567661}
+.nav a.has-competing[aria-current] {border-color:#91c5a1}
+.button,.pill,#account-menu summary {background:var(--control)}
+.button.primary {background:var(--accent);color:#221b0c}
+.button.primary:hover {background:#ffe5a5}
+.button:disabled {cursor:not-allowed;opacity:.65}
+.hero,.hero.hero-events {display:block;min-height:0;margin-top:24px;padding:0 0 15px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none}
+.hero h1,.hero.hero-events h1 {margin:0;font-size:clamp(34px,5vw,52px);line-height:1.08;letter-spacing:-.035em;font-weight:800}
+.hero #hero-copy {margin-top:5px;color:var(--muted);font-size:15px}
+.work,.hero-events + .work {margin-top:18px}
+.scan-panel {margin-top:10px}
+.scan-panel:not([hidden]) {border-radius:8px;background:var(--inset);padding:5px 10px}
+.scan-panel summary {min-height:34px;padding:5px 0}
+.event-filters {padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--inset)}
+.event-filters label {color:var(--muted)}
+.event,.panel,.deck,.empty {background:var(--card)}
+.event {align-items:start}
+.date {background:var(--accent-surface);border-color:#776443;border-radius:9px;padding:9px 3px}
+.date strong,.stat strong,table,.shop-list time {font-variant-numeric:tabular-nums}
+.tag,.tag.alt {background:var(--control);border-color:var(--line);color:#dce7dc;letter-spacing:.035em}
+.tag.competing {background:#23372b;border-color:#567661;color:#b9e7c8}
+.stat {background:var(--inset)}
+.event.is-competing,.play-event.is-competing {border-color:#648b71}
+input,select,textarea {background:var(--inset);border-color:#687b6c;accent-color:var(--accent)}
+input::placeholder,textarea::placeholder {color:#a3b1a5}
+dialog {border-color:#6b7e70;border-radius:14px;box-shadow:0 18px 55px #0007}
+dialog::backdrop {background:#070c09c7}
+dialog h2 {margin-bottom:4px}
+.shop-panel {max-width:none}
+.shop-switch {margin:0 0 16px}
+.shop-switch .button[aria-pressed="true"] {background:var(--accent-surface);border-color:var(--accent-edge);color:var(--accent)}
+#shop-results .shop-list {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:8px}
+#shop-results .shop-list li {padding:0;border:1px solid var(--line);border-radius:8px;background:var(--inset)}
+#shop-results .shop-list a {display:flex;width:100%;min-height:44px;align-items:center;padding:8px 11px;font-weight:650;text-decoration:none}
+#shop-results .shop-list a:hover {text-decoration:underline}
+.shop-list li {border-bottom-color:var(--line)}
+.combined-meta th {color:var(--muted);font-size:12px}
+.combined-meta td {padding-block:9px}
+.combined-meta tbody tr:hover:not(.meta-owned) {background:var(--inset)}
+.combined-meta tr.meta-owned td:first-child {box-shadow:none}
+.play-matches li {padding-block:12px}
+.footer {background:var(--inset)}
+@media (min-width:761px) {
+  .nav {margin-inline:auto}
+}
+@media (max-width:760px) {
+  .hero,.hero.hero-events {margin-top:16px;padding-bottom:11px}
+  .hero h1,.hero.hero-events h1 {font-size:clamp(32px,8vw,40px)}
+  .scan-panel summary {min-height:44px}
+  .event-results-heading {align-items:start;flex-wrap:wrap}
+  .event-results-heading .actions {gap:5px}
+}
+@media (max-width:390px) {
+  .event-filters {display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .event-filters label:last-child {grid-column:1/-1}
+  .deck-sections .panel .heading {flex-wrap:wrap}
+  #shop-results .shop-list {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 </style>
 </head>
 <body>
 <header class="top"><div class="frame">
 <a class="brand" href="#events"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="m12 12 8-8"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/></svg></span>Magic Dash</a>
+<nav class="nav" aria-label="Main"><a href="#events">Events</a><a href="#decks">Deck tracker</a><a href="#buy">Find Cards</a><a href="#play">Play</a></nav>
 <div id="account-controls">
 <button class="button" type="button" id="account-button">Sign in</button>
 <details id="account-menu" hidden>
@@ -183,12 +278,11 @@
 </div>
 </details>
 </div>
-<nav class="nav" aria-label="Main"><a href="#events">Events</a><a href="#decks">Deck tracker</a><a href="#buy">Find Cards</a><a href="#play">Play</a></nav>
 <span class="zone tag">Brisbane · AEST</span>
 </div></header>
 <main class="frame">
 <section class="hero" id="page-hero">
-<div class="hero-intro"><p id="hero-label" class="eyebrow"></p><h1 id="hero-title" tabindex="-1"></h1><p id="hero-copy"></p></div>
+<div class="hero-intro"><h1 id="hero-title" tabindex="-1"></h1><p id="hero-copy"></p></div>
 <aside class="scan-panel" id="scan-panel" aria-label="New Events Added" hidden>
   <p id="scan-status" class="small muted">New Events Added · None yet</p>
   <details id="scan-details" hidden>
@@ -533,11 +627,11 @@ function showEvents() {
     '<div class="event-results-heading"><div><h2 id="event-results-title">Upcoming events</h2><p class="small muted">'+listings.length+' '+(listings.length===1?"event":"events")+'</p></div><div class="actions">'+button("+ Add event","event")+refreshControls("events","Look for new events")+'</div></div>'+
     '<p class="small" id="compete-status" role="status"></p>'+
     (listings.map(eventCard).join("") || '<div class="empty"><h3>No verified upcoming '+resultType+(filter==="All formats"?"":escapeText(filter)+" ")+'listings</h3><p class="muted">Try another filter or add an event from an organiser.</p></div>')+'</section>'+
-    '<aside class="stack"><section class="panel"><p class="eyebrow">Sources</p><h3>'+ (scope==="local"?"Brisbane organisers":"Coverage & schedules")+'</h3><ul>'+
+    '<aside class="stack"><section class="panel"><h3>'+ (scope==="local"?"Brisbane organisers":"Coverage & schedules")+'</h3><ul>'+
     (scope==="local"
       ? '<li>'+link("https://vaultgames.com.au/collections/brisbane-events","Vault Games ↗","")+'</li><li>'+link("https://playmantis.com.au/collections/events","Playmantis ↗","")+'</li><li>'+link("https://www.mtgmate.com.au/pages/events","MTG MATE ↗","")+'</li><li>'+link("https://raptorgames.com/pages/weekly-magic-the-gathering-standard-tournaments-brisbane","Raptor Games ↗","")+'</li><li>'+link("https://locator.wizards.com/","Wizards Store & Event Locator ↗","")+'</li><li>'+link("https://tavernfinder.com/en/events/near/au/brisbane","Tavern Finder Brisbane ↗","")+'</li>'
       : '<li>'+link("https://magic.gg/schedule","Wizards tournament schedule ↗","")+'</li><li>'+link("https://anzmtg.com.au/special-events/","ANZ Super Series ↗","")+'</li><li>'+link("https://www.youtube.com/@playmtg","Play MTG on YouTube ↗","")+'</li>')+
-    '</ul></section><section class="panel"><p class="eyebrow">Calendar</p><p class="muted small">Google Calendar opens a prefilled event for you to save. Dates without times are added as all-day entries. Timed events without a published finish use a one-hour placeholder.</p><p class="muted small">Listings were checked 8 Nov 2026 against organiser calendars, booking pages and mirrored Wizards listings. Check event details for changes.</p></section></aside></div>';
+    '</ul></section><section class="panel"><h3>Calendar</h3><p class="muted small">Google Calendar opens a prefilled event for you to save. Dates without times are added as all-day entries. Timed events without a published finish use a one-hour placeholder.</p><p class="muted small">Saved listings were checked 8 Nov 2026. Check event details for changes.</p></section></aside></div>';
 }
 
 function snapshots(format) {
@@ -742,12 +836,12 @@ function announce(message) {
 function render() {
   const page = playRoute() ? "#play" : ["#decks","#buy"].includes(location.hash) ? location.hash : "#events";
   const headings = {
-    "#events":["","Events",""],
-    "#decks":["","Deck Tracker",""],
-    "#buy":["","Find Cards","Search for a card at Australian stores."],
-    "#play":["","Play",""]
+    "#events":["Events",""],
+    "#decks":["Deck Tracker",""],
+    "#buy":["Find Cards","Search for a card at Australian stores."],
+    "#play":["Play",""]
   };
-  const [label,title,copy] = headings[page];
+  const [title,copy] = headings[page];
   document.querySelector("#page-hero").classList.toggle("hero-events",page==="#events");
   const competingCount = state.playEvents.filter(event=>event.competing && isUpcoming(event,Date.now())).length;
   document.querySelectorAll(".nav a").forEach(a=>{
@@ -756,7 +850,6 @@ function render() {
     a.classList.toggle("has-competing",a.hash==="#events" && competingCount>0);
     if (a.hash==="#play") a.textContent=competingCount ? "Play ("+competingCount+")" : "Play";
   });
-  document.querySelector("#hero-label").textContent = label;
   document.querySelector("#hero-title").textContent = title;
   document.querySelector("#hero-copy").textContent = copy;
   scanPanel.hidden = page!=="#events";
