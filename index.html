@@ -719,9 +719,8 @@ function comparison(deck,matches) {
   });
   const matchupRows = [...groups.values()].sort((a,b)=>b.length-a.length).map(group=>{
     const opponent = group[0].opponent;
-    const published = current.rows.find(item=>current.joinKey(item.name)===current.joinKey(opponent));
     const record = statsFor(group);
-    return '<tr><td>'+escapeText(opponent)+'</td><td>'+record.text+'</td><td>'+record.rate+'</td><td>'+record.lossRate+'</td><td>'+percentage(published?.share)+'</td></tr>';
+    return '<tr><th scope="row">'+escapeText(opponent)+'</th><td>'+record.text+'</td><td>'+record.rate+'</td><td>'+record.lossRate+'</td></tr>';
   }).join("");
   const trends = all.map(snap=>{
     const entry = snap.rows.find(item=>item[1]!=null && archetypeKey(deck.format,item[0])===archetypeKey(deck.format,deck.archetype));
@@ -737,12 +736,15 @@ function deckCard(deck) {
   const list = deck.list ? '<details><summary>Decklist</summary><pre>'+escapeText(deck.list)+'</pre></details>' : "";
   return '<article class="deck"><div class="heading"><div><div class="tags"><span class="tag">'+escapeText(deck.format)+'</span></div><h3>'+escapeText(deck.name)+'</h3>'+
     '<p class="muted small">'+escapeText(deck.archetype)+'</p></div><div class="actions">'+button("Edit","deck",deck.id)+button("+ Log match","match",deck.id,true)+'</div></div>'+
-    '<div class="stats"><div class="stat"><strong>'+record.text+'</strong><span>Your W–L–D</span></div><div class="stat"><strong>'+record.rate+'</strong><span>Your win rate</span></div>'+
-    '<div class="stat"><strong>'+percentage(row?.share)+'</strong><span>'+(current.share?.source==="MTGGoldfish"?"Goldfish reference share":"Published list share")+'</span></div></div>'+
-    '<p class="small muted">Last '+Math.min(sortedMatches.length,10)+' matches: '+recent.text+' · '+recent.rate+'</p>'+
-    '<p class="small muted">'+(row?.winRate!=null ? percentage(row.winRate)+" source win rate"+(row.matches!=null?" · "+fmt(row.matches)+" matches":"") : "Source win rate unavailable for this archetype and window.")+'</p>'+
-    (matchupRows ? '<details open><summary>Matchup results by archetype</summary><div class="table-wrap"><table><thead><tr><th>Opponent archetype</th><th>W-L-D</th><th>Win %</th><th>Loss %</th><th>List share</th></tr></thead><tbody>'+matchupRows+'</tbody></table></div></details>' : "")+
-    (trends ? '<details><summary>Archetype history</summary><div class="table-wrap"><table><thead><tr><th>Window</th><th>List share</th><th>Source</th></tr></thead><tbody>'+trends+'</tbody></table></div></details>' : "")+
+    '<div class="stats"><div class="stat"><strong>'+record.rate+'</strong><span>Win %</span></div><div class="stat"><strong>'+record.text+'</strong><span>Win–loss–draw</span></div>'+
+    '<div class="stat"><strong>'+fmt(sortedMatches.length)+'</strong><span>Matches logged</span></div></div>'+
+    (sortedMatches.length>10 ? '<p class="small muted">Last 10 matches · '+recent.text+' · '+recent.rate+' wins</p>' : "")+
+    (matchupRows ? '<details open><summary>Results by opponent archetype</summary><div class="table-wrap"><table><thead><tr><th scope="col">Opponent archetype</th><th scope="col">W–L–D</th><th scope="col">Win %</th><th scope="col">Loss %</th></tr></thead><tbody>'+matchupRows+'</tbody></table></div></details>' :
+      '<p class="small muted">Log a match to see your win percentage and results against that archetype.</p>')+
+    ((row || trends) ? '<details><summary>Published archetype stats</summary>'+
+      '<p class="small muted">'+(current.share?.source==="MTGGoldfish"?"Goldfish reference share":"Published list share")+' · '+percentage(row?.share)+'</p>'+
+      '<p class="small muted">'+(row?.winRate!=null ? percentage(row.winRate)+" source win rate"+(row.matches!=null?" · "+fmt(row.matches)+" matches":"") : "Source win rate unavailable for this archetype and window.")+'</p>'+
+      (trends ? '<div class="table-wrap"><table><thead><tr><th>Window</th><th>List share</th><th>Source</th></tr></thead><tbody>'+trends+'</tbody></table></div>' : "")+'</details>' : "")+
     (sortedMatches.length ? '<details><summary>Match history ('+sortedMatches.length+')</summary><div class="table-wrap"><table><thead><tr><th>Date</th><th>Opponent archetype</th><th>Result</th><th>Event</th><th><span class="visually-hidden">Manage result</span></th></tr></thead><tbody>'+
       sortedMatches.map(match=>'<tr><td>'+escapeText(match.date)+'</td><td>'+escapeText(match.opponent)+(match.opponentName?'<br><span class="muted">'+escapeText(match.opponentName)+'</span>':"")+'</td><td>'+escapeText(match.result)+'</td><td>'+escapeText(match.event)+'</td><td>'+
         (match.fromPlay?'<a href="#play">Open Play</a>':button("Edit","match",deck.id+"/"+match.id))+'</td></tr>').join("")+'</tbody></table></div></details>' : "")+list+'</article>';
