@@ -2,6 +2,10 @@
 
 Magic Dash tracks Brisbane and major Magic: The Gathering events, personal decks, match results, metagame snapshots, and Australian singles.
 
+## Install on iPhone
+
+Open [magicdash.app](https://magicdash.app/) in Safari and choose **Share → Add to Home Screen**. Enable **Open as Web App** if shown, then tap **Add**. Open Magic Dash from its Home Screen icon and sign in to load your synced decks, matches and watchlist. Live data and account sync require internet access.
+
 ## Run locally
 
 Open `index.html` in a browser. The frontend has no build step. Scryfall card lookup and links to external sources require an internet connection. Find Cards opens the results for the entered card directly at each store and can save a local watchlist without a scanner connection.
