@@ -42,6 +42,7 @@
   let mode="search";
   let query="";
   const defaultSettings={url:read("scanner",{url:""}).url,key:""};
+  const publicScanner={url:"https://magic-dash-scanner.andrewjamespender.workers.dev"};
   let settings=defaultSettings;
   let settingsOwner;
   const connected=()=>Boolean(settings.url && settings.key);
@@ -352,7 +353,7 @@
     return '<section class="panel recent-results"><p class="eyebrow">Decklists and standings</p><h3>Recent '+escape(format)+' tournaments</h3>'+
       (last?'<p class="small muted">Last attempted refresh '+escape(time.format(new Date(last)))+' Brisbane time.'+
         (Object.values(tools.feed.status || {}).includes("previous data kept")?' Some sources kept their previous results.':'')+'</p>':
-        '<p class="small muted">Saved results. Connect the live scanner in Find Cards for hourly refreshes.</p>')+
+        '<p class="small muted">Showing saved results until the hourly feed is available.</p>')+
       (links.length?'<ul class="shop-list">'+links.slice(0,8).join("")+'</ul>':'<p class="small muted">No tournament results available for this format.</p>')+
       (links.length>8?'<details><summary>More results</summary><ul class="shop-list">'+links.slice(8).join("")+'</ul></details>':'')+
       '<div class="actions">'+link("https://www.mtgo.com/decklists","All MTGO decklists ↗")+' '+link("https://mtgdecks.net/","Paper results ↗")+'</div></section>';
@@ -360,11 +361,16 @@
 
   async function loadFeed() {
     const connection=accountStorage ? read("scanner:"+accountStorage.id,defaultSettings) : defaultSettings;
-    if (!connection.url) return false;
-    try { tools.feed=await api("/api/feed",{},false,connection); return Boolean(tools.feed.checkedAt); }
+    try {
+      const feed=await api("/api/feed",{signal:AbortSignal.timeout(12000)},false,connection.url?connection:publicScanner);
+      if (!Number.isFinite(Date.parse(feed.checkedAt))) return false;
+      tools.feed=feed;
+      return true;
+    }
     catch { return false; }
   }
 
-  const tools={renderBuy,recentTournaments,loadFeed,mergeWatchlists,feed:{}};
+  const loadEvents=()=>api("/api/events",{signal:AbortSignal.timeout(12000)},false,publicScanner);
+  const tools={renderBuy,recentTournaments,loadFeed,loadEvents,mergeWatchlists,feed:{}};
   window.MagicDashTools=tools;
 })();

@@ -4,7 +4,7 @@ export const onlineUrl = "https://www.mtgo.com/decklists";
 const paperUrl = "https://mtgdecks.net/";
 const formats = ["Standard","Modern","Legacy"];
 
-function plain(html) {
+export function plain(html) {
   return html.replace(/<[^>]*>/g," ").replace(/&(?:nbsp|#160);/gi," ")
     .replace(/&amp;/gi,"&").replace(/&(?:apos|#39|#039|rsquo);/gi,"'")
     .replace(/&quot;/gi,'"').replace(/\s+/g," ").trim();

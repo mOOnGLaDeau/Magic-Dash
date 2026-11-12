@@ -111,6 +111,9 @@
 .deck-sections .panel h2{margin-bottom:14px}
 .shop-bulk-actions{margin-top:12px}
 #shop-open-next[hidden],#account-sync-action[hidden]{display:none}
+[data-refresh-status]{flex-basis:100%}
+[data-refresh-status]:empty{display:none}
+[data-action^="refresh-"][aria-disabled="true"]{cursor:progress}
 
 .meta-owned .tag{margin-top:3px;color:var(--owned-text);background:#47351f;border-color:#806139}
 .meta-expand{margin:10px 0;width:100%}
@@ -402,9 +405,9 @@ const scanPanel = document.querySelector("#scan-panel");
 const scanStatus = document.querySelector("#scan-status");
 const scanItems = document.querySelector("#scan-items");
 const dateKey = value => /^\d{4}-\d{2}-\d{2}$/.test(value ?? "") && Number.isFinite(Date.parse(value));
-function readScheduledEvents() {
+function readScheduledEvents(scan) {
   try {
-    const scan = JSON.parse(document.querySelector("#brisbane-scheduled-scan").textContent);
+    scan ??= JSON.parse(document.querySelector("#brisbane-scheduled-scan").textContent);
     const valid = new Map();
     for (const event of scan.events) {
       if (event.scope!=="local" || event.category!=="Competitive" ||
@@ -419,7 +422,75 @@ function readScheduledEvents() {
   } catch { return []; }
 }
 const scheduledEvents = readScheduledEvents();
-const eventListings = () => [...events,...scheduledEvents,...state.customEvents];
+let liveEvents = [];
+const eventProduct = item => {
+  const url = safeUrl(item.url) && new URL(item.url);
+  return url?.hostname === "vaultgames.com.au" ? url.pathname.match(/\/products\/([a-z0-9-]+)\/?$/i)?.[1] : undefined;
+};
+const eventListings = () => {
+  const existing = [...events,...scheduledEvents,...state.customEvents];
+  const products = new Set(existing.map(eventProduct).filter(Boolean));
+  const ids = new Set(existing.map(item=>item.id));
+  return [...existing,...liveEvents.filter(item=>!ids.has(item.id) && !products.has(eventProduct(item)))];
+};
+const refreshStatus = {events:{},meta:{}};
+function refreshControls(kind,label) {
+  const {busy,message} = refreshStatus[kind];
+  return '<button class="button" type="button" data-action="refresh-'+kind+'"'+(busy?' aria-disabled="true"':'')+'>'+
+    (busy?"Refreshing…":label)+'</button><p class="small muted" data-refresh-status="'+kind+'" role="status">'+escapeText(message || "")+'</p>';
+}
+async function refreshPageData(kind) {
+  const status = refreshStatus[kind];
+  if (status.busy) return;
+  const updateControls = () => {
+    const control = app.querySelector('[data-action="refresh-'+kind+'"]');
+    if (!control) return;
+    control.setAttribute("aria-disabled",String(Boolean(status.busy)));
+    control.textContent = status.busy ? "Refreshing…" : kind==="events" ? "Look for new events" : "Get the latest meta";
+    app.querySelector('[data-refresh-status="'+kind+'"]').textContent = status.message;
+  };
+  status.busy = true;
+  status.message = kind==="events" ? "Checking the latest event scan…" : "Checking the latest metagame feed…";
+  updateControls();
+  try {
+    let checkedAt, partial;
+    if (kind==="events") {
+      const scan = await window.MagicDashTools.loadEvents();
+      if (!Array.isArray(scan.events) || !Number.isFinite(Date.parse(scan.checkedAt))) throw Error();
+      liveEvents = readScheduledEvents(scan);
+      ({checkedAt,partial} = scan);
+    } else {
+      if (!await window.MagicDashTools.loadFeed()) throw Error();
+      const feed = window.MagicDashTools.feed;
+      checkedAt = feed.checkedAt;
+      partial = Object.values(feed.status || {}).includes("previous data kept");
+    }
+    status.message = (kind==="events" ? "Vault Games checked " : "Feed checked ")+dayText(checkedAt)+" at "+timeText(checkedAt)+" AEST."+
+      (partial ? " Some source results could not be refreshed." : "");
+    status.busy = false;
+    const control = app.querySelector('[data-action="refresh-'+kind+'"]');
+    if (control) {
+      const focused = document.activeElement;
+      if (focused===control || !app.contains(focused)) {
+        render();
+        if (focused===control) app.querySelector('[data-action="refresh-'+kind+'"]').focus();
+      } else {
+        const id = focused.id;
+        const {action, id: actionId} = focused.dataset;
+        const href = focused.getAttribute("href");
+        render();
+        (id && document.getElementById(id) || action && actionControl(action,actionId) ||
+          href && [...app.querySelectorAll("a")].find(link=>link.getAttribute("href")===href) ||
+          app.querySelector('[data-action="refresh-'+kind+'"]'))?.focus();
+      }
+    }
+  } catch {
+    status.message = kind==="events" ? "Event refresh unavailable. Showing saved events." : "Metagame refresh unavailable. Showing saved data.";
+  } finally {
+    status.busy = false;
+    updateControls();
+  }
+}
 function isUpcoming(item,now) {
   return item.start ? (item.end ? Date.parse(item.end)>=now : eventDate(item)>=isoLocal(now)) : (item.through||item.date)>=isoLocal(now);
 }
@@ -459,7 +530,7 @@ function showEvents() {
   const resultType = scope==="local" ? category.toLowerCase()+" " : "";
   app.innerHTML = '<div class="event-filters" role="group" aria-label="Event filters">'+filters+'</div>'+
     '<div class="grid"><section class="stack" id="event-results" aria-labelledby="event-results-title">'+
-    '<div class="event-results-heading"><div><h2 id="event-results-title">Upcoming events</h2><p class="small muted">'+listings.length+' '+(listings.length===1?"event":"events")+'</p></div>'+button("+ Add event","event")+'</div>'+
+    '<div class="event-results-heading"><div><h2 id="event-results-title">Upcoming events</h2><p class="small muted">'+listings.length+' '+(listings.length===1?"event":"events")+'</p></div><div class="actions">'+button("+ Add event","event")+refreshControls("events","Look for new events")+'</div></div>'+
     '<p class="small" id="compete-status" role="status"></p>'+
     (listings.map(eventCard).join("") || '<div class="empty"><h3>No verified upcoming '+resultType+(filter==="All formats"?"":escapeText(filter)+" ")+'listings</h3><p class="muted">Try another filter or add an event from an organiser.</p></div>')+'</section>'+
     '<aside class="stack"><section class="panel"><p class="eyebrow">Sources</p><h3>'+ (scope==="local"?"Brisbane organisers":"Coverage & schedules")+'</h3><ul>'+
@@ -619,7 +690,7 @@ function showDecks() {
     (accountPhase==="ready" && state.decks.length ? button("+ Add deck","deck","",true) : "")+'</div><div class="stack">'+
     (accountPlaceholder("your decks") || state.decks.map(deckCard).join("") || '<div class="empty"><h3>Start with a deck you play</h3><p class="muted">Save a deck and log matches to track your results by opponent archetype.</p>'+button("+ Add your first deck","deck","",true)+'</div>')+
     (accountPhase==="ready" ? '<p class="small muted">Decks and matches sync to your account. Win and loss percentages include draws in the total.</p>' : "")+'</div></section>'+
-    '<section class="panel" aria-labelledby="metagame-title"><h2 id="metagame-title">Metagame</h2>'+
+    '<section class="panel" aria-labelledby="metagame-title"><div class="heading"><h2 id="metagame-title">Metagame</h2><div class="actions">'+refreshControls("meta","Get the latest meta")+'</div></div>'+
     '<label>Format<select id="meta-format">'+options(formats,metaFormat)+'</select></label>'+windowSlider+
     (share?.source==="MTGGoldfish" ? '<p class="small muted">Exact dates for MTGGoldfish reference share are unverified.</p>' : "")+table+expand+
     '<div class="actions">'+sourceLinks+button("Add snapshot","snapshot")+'</div>'+savedSnapshots+'</section>'+
@@ -940,6 +1011,7 @@ app.addEventListener("click",event=>{
   const control = event.target.closest("button[data-action]");
   if (!control) return;
   const {action,id} = control.dataset;
+  if (action === "refresh-events" || action === "refresh-meta") { void refreshPageData(action.slice(8)); return; }
   if (action === "account") { document.querySelector("#account-button").click(); return; }
   const reasons = {deck:"save a deck", match:"log a match", "play-match":"log a match",
     compete:"add this event to Play", event:"save an event", snapshot:"save a snapshot"};

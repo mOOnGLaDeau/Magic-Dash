@@ -1,5 +1,6 @@
 import {cardKey,validCard,scanOffers} from "./catalog.mjs";
 import {refreshFeed} from "./feed.mjs";
+import {refreshEvents} from "./events.mjs";
 
 const watchPrefix="watch:";
 const resultPrefix="result:";
@@ -57,6 +58,7 @@ export default {
     const data=env.DASH_DATA;
     try {
       if (request.method==="GET" && url.pathname==="/api/feed") return json(await data.get("feed","json") || {});
+      if (request.method==="GET" && url.pathname==="/api/events") return json(await data.get("events","json") || {});
       const offersRequest=request.method==="GET" && url.pathname==="/api/offers";
       if (!offersRequest && url.pathname!=="/api/watch") return json({error:"Unknown route"},404);
       const key=typeof env.WATCH_KEY==="string" ? env.WATCH_KEY.trim() : "";
@@ -94,6 +96,7 @@ export default {
   async scheduled(_controller,env) {
     const failures=[];
     try { await refreshFeed(env.DASH_DATA); } catch (error) { failures.push(error); }
+    try { await refreshEvents(env.DASH_DATA); } catch (error) { failures.push(error); }
     try { await refreshWatches(env); } catch (error) { failures.push(error); }
     if (failures.length) throw new AggregateError(failures,"Scheduled scan partially failed");
   }

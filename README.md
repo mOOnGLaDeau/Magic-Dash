@@ -39,6 +39,7 @@ Generate a random key of at least 24 characters. In Find Cards, open **Live scan
 Optional eBay results require production Browse API access and the Worker secrets `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET`. The public repo and browser need neither eBay secret.
 
 - The scanner refreshes the Deck Tracker feed and scanner watchlist at the top of every hour (`0 * * * *` UTC). The Brisbane event automation runs separately.
+- The scanner also checks Vault Games collections for supported competitive Brisbane events. The Events and Metagame refresh buttons retrieve the latest stored scan and show when it ran.
 - The watchlist scanner checks in-stock AUD variants on the configured Shopify stores and listings on MTG Mate. Each Shopify store lookup checks up to three matching products. Stock counts appear when the seller publishes them. Scanner results for eBay are fixed-price offers filtered for Australia. Listed prices exclude shipping.
 - Up to 10 watched cards share one private watchlist. The first successful check at each store establishes a baseline. Subsequent checks show previously unseen listing IDs from checked sources.
 - The hourly Deck Tracker feed reads MTGGoldfish reference share, verified 180-day MTGDecks win rates, the official MTGO results index and selected large paper events from MTGDecks. Other time windows and Highlander use existing snapshots. The feed keeps the last verified data when an upstream site is unavailable or its layout changes.
