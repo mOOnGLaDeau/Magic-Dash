@@ -6,7 +6,7 @@ compatibility_date = "2025-11-01"
 DASH_ORIGINS = "https://moongladeau.github.io,https://magicdash.app"
 
 [triggers]
-crons = ["0 14 * * *"]
+crons = ["0 * * * *"]
 
 [[kv_namespaces]]
 binding = "DASH_DATA"

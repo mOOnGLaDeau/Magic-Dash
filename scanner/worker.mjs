@@ -82,7 +82,7 @@ export default {
       else {
         const current=await watches(data);
         if (current.some(item=>item.id===id)) return json({card});
-        if (current.length>=10) return json({error:"The nightly watchlist holds up to 10 cards."},409);
+        if (current.length>=10) return json({error:"The scanner watchlist holds up to 10 cards."},409);
         await data.put(watchPrefix+id,"1",{metadata:{card,generation:crypto.randomUUID()}});
       }
       return json({card});
@@ -95,6 +95,6 @@ export default {
     const failures=[];
     try { await refreshFeed(env.DASH_DATA); } catch (error) { failures.push(error); }
     try { await refreshWatches(env); } catch (error) { failures.push(error); }
-    if (failures.length) throw new AggregateError(failures,"Nightly scan partially failed");
+    if (failures.length) throw new AggregateError(failures,"Scheduled scan partially failed");
   }
 };

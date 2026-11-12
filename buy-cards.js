@@ -187,7 +187,7 @@
       input.value=query=card;
       results.innerHTML='<div class="shop-result-heading"><h3 tabindex="-1">'+escape(card)+'</h3><div class="actions">'+
         '<button type="button" class="button" id="shop-watch-card">Watch card</button></div></div>'+
-        '<p class="small muted" id="shop-watch-hint">Watch card saves it to your account. Nightly scans are optional in Watchlist.</p>'+
+        '<p class="small muted" id="shop-watch-hint">Watch card saves it to your account. Scheduled scans are optional in Watchlist.</p>'+
         '<p class="small" id="shop-watch-status" role="status"></p>'+storeLinks(card)+
         '<div class="actions shop-bulk-actions"><button type="button" class="button" id="shop-open-all">Open all stores ('+stores.length+')</button>'+
         '<button type="button" class="button" id="shop-open-next" hidden>Open next store</button></div>'+
@@ -276,7 +276,7 @@
   }
 
   async function renderWatches(content) {
-    content.innerHTML='<h3>Watched cards</h3><p class="small muted">Your saved cards sync across devices. Use your connected scanner to start or stop nightly checks for a card.</p>'+
+    content.innerHTML='<h3>Watched cards</h3><p class="small muted">Your saved cards sync across devices. Use your connected scanner to start or stop scheduled checks for a card.</p>'+
       '<p id="shop-watch-status" class="small" role="status"></p><div id="shop-watched-cards"></div>';
     const status=content.querySelector("#shop-watch-status");
     const list=content.querySelector("#shop-watched-cards");
@@ -288,16 +288,16 @@
     let scannerWatches=[];
     if (connected() && state.watchlist.length) {
       try { scannerWatches=(await api("/api/watch",{},true)).watches; }
-      catch { status.textContent="Nightly scanner results are unavailable."; }
+      catch { status.textContent="Scanner results are unavailable."; }
     }
     if (!content.isConnected || account!==accountStorage) return;
     const trackedCards=new Set(scannerWatches.map(item=>keyFor(item.card)));
     const entries=state.watchlist.map(card=>scannerWatches.find(item=>keyFor(item.card)===keyFor(card)) || {card,newOffers:[]});
     list.innerHTML=entries.map((item,index)=>'<article class="shop-watch-card"><div class="shop-result-heading"><h4>'+escape(item.card)+'</h4>'+
       '<button class="button" type="button" data-watch-remove="'+index+'">Remove</button></div>'+
-      (connected()?'<button class="button" type="button" data-scan-toggle="'+index+'">'+(trackedCards.has(keyFor(item.card))?"Stop nightly scan":"Start nightly scan")+'</button>':'')+
+      (connected()?'<button class="button" type="button" data-scan-toggle="'+index+'">'+(trackedCards.has(keyFor(item.card))?"Stop scheduled scan":"Start scheduled scan")+'</button>':'')+
       (item.checkedAt?'<p class="small muted">Last checked '+escape(time.format(new Date(item.checkedAt)))+' Brisbane time</p>':'')+
-      (item.newOffers.length?offerList(item.newOffers):'<p class="small muted">'+(item.checkedAt?"No new listings from checked stores on the latest scan.":"No nightly scan available.")+'</p>')+
+      (item.newOffers.length?offerList(item.newOffers):'<p class="small muted">'+(item.checkedAt?"No new listings from checked stores on the latest scan.":"No scheduled scan available.")+'</p>')+
       '<details class="shop-sources"><summary>Search stores for '+escape(item.card)+'</summary>'+storeLinks(item.card)+'</details></article>').join("") ||
       '<p class="muted">Search for a card and choose Watch card to add it here.</p>';
     if (connected()) {
@@ -352,7 +352,7 @@
     return '<section class="panel recent-results"><p class="eyebrow">Decklists and standings</p><h3>Recent '+escape(format)+' tournaments</h3>'+
       (last?'<p class="small muted">Last attempted refresh '+escape(time.format(new Date(last)))+' Brisbane time.'+
         (Object.values(tools.feed.status || {}).includes("previous data kept")?' Some sources kept their previous results.':'')+'</p>':
-        '<p class="small muted">Saved results. Connect the live scanner in Find Cards for nightly refreshes.</p>')+
+        '<p class="small muted">Saved results. Connect the live scanner in Find Cards for hourly refreshes.</p>')+
       (links.length?'<ul class="shop-list">'+links.slice(0,8).join("")+'</ul>':'<p class="small muted">No tournament results available for this format.</p>')+
       (links.length>8?'<details><summary>More results</summary><ul class="shop-list">'+links.slice(8).join("")+'</ul></details>':'')+
       '<div class="actions">'+link("https://www.mtgo.com/decklists","All MTGO decklists ↗")+' '+link("https://mtgdecks.net/","Paper results ↗")+'</div></section>';

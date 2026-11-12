@@ -24,7 +24,7 @@ The **Account** button appears when the project URL and publishable key are conf
 
 ## Deploy the scanner
 
-The scanner is a separate Cloudflare Worker. In the Cloudflare dashboard, go to **Workers & Pages**, create a Worker using **Import a repository**, and select **Magic-Dash**. Use branch `main`, root directory `scanner`, and deploy command `npx wrangler deploy`. Wrangler creates the `DASH_DATA` namespace on first deploy. The GitHub Pages site stays at its existing URL. A nightly run with multiple watched cards can exceed the Workers Free limits.
+The scanner is a separate Cloudflare Worker. In the Cloudflare dashboard, go to **Workers & Pages**, create a Worker using **Import a repository**, and select **Magic-Dash**. Use branch `main`, root directory `scanner`, and deploy command `npx wrangler deploy`. Wrangler creates the `DASH_DATA` namespace on first deploy. The GitHub Pages site stays at its existing URL. A scheduled run with multiple watched cards can exceed the Workers Free limits.
 
 Under the Worker's **Settings → Variables and Secrets**, add a secret named `WATCH_KEY`. For command-line setup, run the following from `scanner/` with Node.js and npm installed:
 
@@ -38,7 +38,7 @@ Generate a random key of at least 24 characters. In Find Cards, open **Live scan
 
 Optional eBay results require production Browse API access and the Worker secrets `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET`. The public repo and browser need neither eBay secret.
 
-- The cron starts daily at midnight Brisbane time (`0 14 * * *` UTC). The existing Brisbane event automation runs separately.
+- The scanner refreshes the Deck Tracker feed and scanner watchlist at the top of every hour (`0 * * * *` UTC). The Brisbane event automation runs separately.
 - The watchlist scanner checks in-stock AUD variants on the configured Shopify stores and listings on MTG Mate. Each Shopify store lookup checks up to three matching products. Stock counts appear when the seller publishes them. Scanner results for eBay are fixed-price offers filtered for Australia. Listed prices exclude shipping.
 - Up to 10 watched cards share one private watchlist. The first successful check at each store establishes a baseline. Subsequent checks show previously unseen listing IDs from checked sources.
-- The nightly Deck Tracker feed reads MTGGoldfish reference share, verified 180-day MTGDecks win rates, the official MTGO results index and selected large paper events from MTGDecks. Other time windows and Highlander use existing snapshots. The feed keeps the last verified data when an upstream site is unavailable or its layout changes.
+- The hourly Deck Tracker feed reads MTGGoldfish reference share, verified 180-day MTGDecks win rates, the official MTGO results index and selected large paper events from MTGDecks. Other time windows and Highlander use existing snapshots. The feed keeps the last verified data when an upstream site is unavailable or its layout changes.
