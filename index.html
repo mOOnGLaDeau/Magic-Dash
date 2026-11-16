@@ -231,7 +231,29 @@ a:hover,button:hover {filter:none}
 .event-filters {padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--inset)}
 .event-filters label {color:var(--muted)}
 .event,.panel,.deck,.empty {background:var(--card)}
-.event {align-items:start}
+.event {
+  grid-template-columns:58px minmax(0,1.25fr) minmax(0,1fr) minmax(0,220px);
+  gap:12px 20px;
+  align-items:start;
+  padding:16px;
+}
+.event-title,.event-details,.event-actions {min-width:0;overflow-wrap:anywhere}
+.event-title .tags {margin-bottom:6px}
+.event-details {display:grid;gap:3px}
+.event .event-details p {margin:0}
+.event-venue {font-weight:700}
+.event-details [data-drive-address]:not(:empty) {display:block}
+.event-actions {justify-content:flex-end}
+#event-results > #compete-status:empty {position:absolute}
+@media (max-width:950px) {
+  .event {grid-template-columns:54px minmax(0,1.1fr) minmax(0,1fr);gap:10px 14px}
+  .event-actions {grid-column:2/-1;justify-content:flex-start}
+}
+@media (max-width:600px) {
+  .event {grid-template-columns:48px minmax(0,1fr);padding:12px;gap:10px}
+  .event-details,.event-actions {grid-column:1/-1}
+  .event-details {border-top:1px solid var(--line);padding-top:8px}
+}
 .date {background:var(--accent-surface);border-color:#776443;border-radius:9px;padding:9px 3px}
 .date strong,.stat strong,table,.shop-list time {font-variant-numeric:tabular-nums}
 .tag,.tag.alt {background:var(--control);border-color:var(--line);color:#dce7dc;letter-spacing:.035em}
@@ -532,7 +554,7 @@ function driveLabel(address) {
   if (!estimate) return "";
   const minutes = Math.max(1,Math.round(estimate.duration/60));
   const time = minutes < 60 ? minutes+" min" : Math.floor(minutes/60)+" hr "+minutes%60+" min";
-  return " · ~"+(estimate.distance/1000).toLocaleString("en-AU",{maximumFractionDigits:1})+" km · "+time+" drive";
+  return "~"+(estimate.distance/1000).toLocaleString("en-AU",{maximumFractionDigits:1})+" km · "+time+" drive";
 }
 
 async function venueLocation(address) {
@@ -620,14 +642,17 @@ function eventCard(item) {
     ? dayText(first)+" · "+zonedTime(first)+(item.end ? " – "+(isoLocal(first)===isoLocal(item.end) ? "" : dayText(item.end)+" · ")+zonedTime(item.end) : "")
     : dateOnlyText(item.date)+last+" · Event-local dates · Time TBA";
   return '<article class="event'+(competing?" is-competing":"")+'"><div class="date" aria-hidden="true"><span class="num">'+dateFormat(first,{month:"short",...(item.start ? {} : {timeZone:"UTC"})})+'</span><strong>'+dateFormat(first,{day:"numeric",...(item.start ? {} : {timeZone:"UTC"})})+'</strong></div>'+
-    '<div><div class="tags"><span class="tag">'+escapeText(item.format)+'</span><span class="tag alt">'+escapeText(item.kind)+'</span></div><h3>'+escapeText(item.title)+'</h3>'+
-    '<p class="muted small">'+escapeText(item.venue)+trip+'<br>'+escapeText(when)+(item.note ? '<br>'+escapeText(item.note) : "")+
-    (item.scope==="major" && !item.stream ? '<br>Stream TBA' : "")+'</p><div class="actions">'+
+    '<div class="event-title"><div class="tags"><span class="tag">'+escapeText(item.format)+'</span><span class="tag alt">'+escapeText(item.kind)+'</span></div><h3>'+escapeText(item.title)+'</h3></div>'+
+    '<div class="event-details"><p class="event-venue">'+escapeText(item.venue)+'</p>'+trip+
+    '<p class="muted small">'+escapeText(when)+'</p>'+
+    (item.note ? '<p class="muted small">'+escapeText(item.note)+'</p>' : "")+
+    (item.scope==="major" && !item.stream ? '<p class="muted small">Stream TBA</p>' : "")+
+    '</div><div class="actions event-actions">'+
     link(item.url,item.scope==="local"?"Event / registration ↗":"Event details ↗")+
     link(item.stream,(item.streamLabel || (item.custom ? "Stream" : "Official stream channel"))+" ↗",item.start?"button primary":"button")+
     (competing?'<span class="tag competing">Competing</span><a class="button primary" href="#play/'+encodeURIComponent(item.id)+'">Open in Play</a>'+
       button("Stop competing","compete",item.id):button("Add to Play","compete",item.id))+
-    (item.custom ? button("Edit","event",item.id) : "")+'</div></div></article>';
+    (item.custom ? button("Edit","event",item.id) : "")+'</div></article>';
 }
 
 const scanPanel = document.querySelector("#scan-panel");
