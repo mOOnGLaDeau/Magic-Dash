@@ -115,7 +115,8 @@
 .deck-sections .panel h2{margin-bottom:14px}
 .shop-bulk-actions{margin-top:12px}
 #shop-open-next[hidden],#account-sync-action[hidden]{display:none}
-[data-refresh-status]{flex-basis:100%}
+.refresh-control{display:grid;justify-items:start;gap:4px}
+.refresh-control p{margin:0}
 [data-refresh-status]:empty{display:none}
 [data-action^="refresh-"][aria-disabled="true"]{cursor:progress}
 
@@ -530,12 +531,17 @@ const eventListings = () => {
   return [...existing,...liveEvents.filter(item=>!ids.has(item.id) && !products.has(eventProduct(item)))];
 };
 const refreshStatus = {events:{},meta:{}};
+function refreshTimestamp(kind) {
+  const {checkedAt,partial} = refreshStatus[kind];
+  if (!checkedAt) return "Last updated time unavailable";
+  return (partial ? "Last checked " : "Last updated ")+dayText(checkedAt)+" at "+timeText(checkedAt)+" AEST";
+}
 function refreshControls(kind,label) {
   const {busy,message} = refreshStatus[kind];
-  return '<button class="button" type="button" data-action="refresh-'+kind+'"'+(busy?' aria-disabled="true"':'')+'>'+
-    (busy?"Refreshing…":label)+'</button><p class="small muted" data-refresh-status="'+kind+'" role="status">'+escapeText(message || "")+'</p>';
+  return '<div class="refresh-control"><button class="button" type="button" data-action="refresh-'+kind+'"'+(busy?' aria-disabled="true"':'')+'>'+
+    (busy?"Refreshing…":label)+'</button><p class="small muted" data-refresh-time="'+kind+'">'+escapeText(refreshTimestamp(kind))+'</p><p class="small muted" data-refresh-status="'+kind+'" role="status">'+escapeText(message || "")+'</p></div>';
 }
-async function refreshPageData(kind) {
+async function refreshPageData(kind, initial = false) {
   const status = refreshStatus[kind];
   if (status.busy) return;
   const updateControls = () => {
@@ -543,10 +549,11 @@ async function refreshPageData(kind) {
     if (!control) return;
     control.setAttribute("aria-disabled",String(Boolean(status.busy)));
     control.textContent = status.busy ? "Refreshing…" : kind==="events" ? "Look for new events" : "Get the latest meta";
+    app.querySelector('[data-refresh-time="'+kind+'"]').textContent = refreshTimestamp(kind);
     app.querySelector('[data-refresh-status="'+kind+'"]').textContent = status.message;
   };
   status.busy = true;
-  status.message = kind==="events" ? "Checking the latest event scan…" : "Checking the latest metagame feed…";
+  status.message = initial ? "" : kind==="events" ? "Checking the latest event scan…" : "Checking the latest metagame feed…";
   updateControls();
   try {
     let checkedAt, partial;
@@ -561,11 +568,11 @@ async function refreshPageData(kind) {
       checkedAt = feed.checkedAt;
       partial = Object.values(feed.status || {}).includes("previous data kept");
     }
-    status.message = (kind==="events" ? "Vault Games checked " : "Feed checked ")+dayText(checkedAt)+" at "+timeText(checkedAt)+" AEST."+
-      (partial ? " Some source results could not be refreshed." : "");
+    Object.assign(status,{checkedAt,partial});
+    status.message = partial ? "Some source results could not be refreshed." : initial ? "" : "Latest feed loaded.";
     status.busy = false;
     const control = app.querySelector('[data-action="refresh-'+kind+'"]');
-    if (control) {
+    if (control && (!initial || !editor.open)) {
       const focused = document.activeElement;
       if (focused===control || !app.contains(focused)) {
         render();
@@ -581,7 +588,7 @@ async function refreshPageData(kind) {
       }
     }
   } catch {
-    status.message = kind==="events" ? "Event refresh unavailable. Showing saved events." : "Metagame refresh unavailable. Showing saved data.";
+    status.message = initial ? "" : kind==="events" ? "Event refresh unavailable. Showing saved events." : "Metagame refresh unavailable. Showing saved data.";
   } finally {
     status.busy = false;
     updateControls();
@@ -1165,9 +1172,8 @@ window.addEventListener("hashchange",()=>{
   focusRoute();
 });
 render();
-window.MagicDashTools.loadFeed().then(updated=>{
-  if (updated && location.hash==="#decks" && !editor.open && !app.contains(document.activeElement)) render();
-});
+void refreshPageData("events",true);
+void refreshPageData("meta",true);
 
 </script>
 <script>
