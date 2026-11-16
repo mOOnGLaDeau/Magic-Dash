@@ -87,7 +87,7 @@
 @media (max-width: 760px) {
   .top .frame { display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;padding-block:4px 8px; }
   .brand { font-size:17px;white-space:nowrap; }
-  .nav { grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px; }
+  .nav { grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px; }
   .nav a { border-color:var(--line);padding-inline:3px;text-align:center;line-height:1.2; }
   #account-controls { justify-self:end; }
 }
@@ -278,7 +278,7 @@ dialog h2 {margin-bottom:4px}
 <body>
 <header class="top"><div class="frame">
 <a class="brand" href="#events" aria-label="Magic Dash events"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="m12 12 8-8"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/></svg></span>Magic Dash</a>
-<nav class="nav" aria-label="Main"><a href="#decks">Deck tracker</a><a href="#buy">Find Cards</a><a href="#play">Play</a></nav>
+<nav class="nav" aria-label="Main"><a href="#events">Events</a><a href="#decks">Deck tracker</a><a href="#buy">Find Cards</a><a href="#play">Play</a></nav>
 <div id="account-controls">
 <button class="button" type="button" id="account-button">Sign in</button>
 <details id="account-menu" hidden>
