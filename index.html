@@ -108,6 +108,12 @@
 #account-close{justify-self:start}
 .account-sync{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 14px;color:var(--muted)}
 .account-sync:has(p:empty){display:none}
+.play-decks{margin:0 0 24px}
+.play-decks > summary{font-size:17px;font-weight:750}
+.play-decks[open] > summary{margin-bottom:14px}
+.meta-controls{display:flex;align-items:end;flex-wrap:wrap;gap:12px;margin-bottom:12px}
+.meta-controls label{flex:1 1 180px}
+.meta-trend{margin:16px 0}
 .deck-sections{display:grid;grid-template-columns:minmax(0,1fr);gap:30px}
 .deck-sections .heading{flex-direction:row;align-items:center}
 .metric-source{display:block;color:var(--muted);font-weight:400;font-size:12px;line-height:1.35}
@@ -451,6 +457,8 @@ let filter = "All formats";
 let metaFormat = "Standard";
 const metaWindows = ["7 days","14 days","1 month","2 months","3 months","6 months"];
 let metaWindow = 2;
+let metaRankBy = "share";
+let playDecksOpen = false;
 let metaExpanded = false;
 let saveMessage = "";
 let accountStorage;
@@ -849,7 +857,7 @@ function deckMatches(deck) {
 }
 function comparison(deck,matches) {
   const all = snapshots(deck.format);
-  const current = combinedMetagame(deck.format,metaWindow);
+  const current = combinedMetagame(deck.format,2);
   const target = current.joinKey(deck.archetype);
   const row = current.rows.find(item=>current.joinKey(item.name)===target);
   const groups = new Map();
@@ -890,17 +898,78 @@ function deckCard(deck) {
       sortedMatches.map(match=>'<tr><td>'+escapeText(match.date)+'</td><td>'+escapeText(match.opponent)+(match.opponentName?'<br><span class="muted">'+escapeText(match.opponentName)+'</span>':"")+'</td><td>'+escapeText(match.result)+'</td><td>'+escapeText(match.event)+'</td><td>'+
         (match.fromPlay?'<a href="#play">Open Play</a>':button("Edit","match",deck.id+"/"+match.id))+'</td></tr>').join("")+'</tbody></table></div></details>' : "")+list+'</article>';
 }
+function moversFor(format) {
+  const history = window.MagicDashTools.feed.meta?.[format]?.shareHistory || [];
+  const latest = history.at(-1);
+  const week = 7 * 86400000;
+  const baseline = latest && history.findLast(snapshot=>{
+    const elapsed = Date.parse(latest.day)-Date.parse(snapshot.day);
+    return elapsed>=week && elapsed<=2*week;
+  });
+  if (!baseline) return null;
+  const ranked = rows => [...rows].sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0]))
+    .map(([name,share],index)=>({name,share,rank:index+1}));
+  const before = new Map(ranked(baseline.rows).map(row=>[row.name,row]));
+  const movers = ranked(latest.rows).flatMap(row=>{
+    const previous = before.get(row.name);
+    const jump = previous ? previous.rank-row.rank : 0;
+    const gain = previous ? row.share-previous.share : 0;
+    return jump>=3 && gain>0 ? [{...row,jump,gain}] : [];
+  }).sort((a,b)=>b.jump-a.jump || b.gain-a.gain);
+  return {movers,from:baseline.day,to:latest.day};
+}
+
+function metagameMovers(format) {
+  if (format==="7-Point Highlander") return "";
+  const trend = moversFor(format);
+  return '<section class="meta-trend"><h3>Biggest climbers</h3>'+
+    (!trend ? '<p class="small muted">Rank changes appear after about a week of successful MTGGoldfish snapshots.</p>' :
+      '<p class="small muted">MTGGoldfish snapshots '+escapeText(trend.from+" to "+trend.to)+
+      ' · Climbed at least 3 ranks and gained share.</p>'+
+      (trend.movers.length ? '<ol>'+trend.movers.slice(0,5).map(row=>'<li>'+escapeText(row.name)+
+        ' · #'+row.rank+' · Up '+row.jump+' · +'+row.gain.toFixed(1)+' pp share</li>').join("")+'</ol>' :
+        '<p class="small muted">No archetypes met both thresholds during this comparison.</p>'))+'</section>';
+}
+
+function challengePlacements(format) {
+  const source = "https://deckscout.fyi/metagame/"+format.toLowerCase()+"/";
+  const snapshot = window.MagicDashTools.feed.meta?.[format]?.placements;
+  const rows = (snapshot?.rows || []).filter(row=>row.count>=20)
+    .sort((a,b)=>b.topEight-a.topEight || b.count-a.count).slice(0,10);
+  return '<section class="panel"><h2>MTGO Challenge placements</h2>'+
+    '<p class="small muted">Last 30 days · Ranked by Top 8 conversion among archetypes with at least 20 published decks'+
+    (snapshot ? ' · Fetched '+escapeText(dayText(snapshot.checkedAt)) : '')+'.</p>'+
+    (rows.length ? '<div class="table-wrap"><table><thead><tr><th scope="col">Archetype</th><th scope="col">Top 8 conversion</th><th scope="col">Published decks</th><th scope="col">Share change</th></tr></thead><tbody>'+
+      rows.map(row=>'<tr><th scope="row">'+escapeText(row.name)+'</th><td>'+percentage(row.topEight)+'</td><td>'+fmt(row.count)+
+      '</td><td>'+(row.change==null ? '–' : (row.change>0?"+":"")+row.change+" pp")+'</td></tr>').join("")+'</tbody></table></div>' :
+      '<p class="small muted">No verified placement snapshot is available yet.</p>')+
+    '<div class="actions">'+link(source,"Deck Scout standings and trends")+'</div></section>';
+}
+
+function showPersonalDecks() {
+  const count = accountPhase==="ready" ? " ("+fmt(state.decks.length)+")" : "";
+  return '<details class="panel play-decks" id="play-decks"'+(playDecksOpen?' open':'')+'>'+
+    '<summary>Your decks'+count+'</summary><div class="stack">'+
+    (accountPhase==="ready" && state.decks.length ? '<div class="actions">'+button("+ Add deck","deck","",true)+'</div>' : "")+
+    (accountPlaceholder("your decks") || state.decks.map(deckCard).join("") || '<div class="empty"><h3>Start with a deck you play</h3><p class="muted">Save a deck and log matches to track your results by opponent archetype.</p>'+button("+ Add your first deck","deck","",true)+'</div>')+
+    '</div></details>';
+}
+
 function showDecks() {
   const {share,rates,rows,joinKey} = combinedMetagame(metaFormat,metaWindow);
   const owned = new Set(state.decks.filter(deck=>deck.format===metaFormat).map(deck=>joinKey(deck.archetype)));
-  const limit = Math.min(50,rows.length);
-  const displayed = rows.slice(0,metaExpanded?limit:10);
-  const metricHeading = (label, metric) => '<th scope="col">'+label+'<span class="metric-source">'+
+  const rankBy = !share ? "winRate" : !rates ? "share" : metaRankBy;
+  const ranked = rows.filter(row=>rankBy==="winRate" ? row.winRate!=null : row.share!=null);
+  ranked.sort((a,b)=>rankBy==="winRate" ? b.winRate-a.winRate || (b.matches || 0)-(a.matches || 0) :
+    b.share-a.share || a.name.localeCompare(b.name));
+  const limit = Math.min(50,ranked.length);
+  const displayed = ranked.slice(0,metaExpanded?limit:10);
+  const metricHeading = (label, metric, key) => '<th scope="col"'+(key===rankBy?' aria-sort="descending"':'')+'>'+label+'<span class="metric-source">'+
     (metric ? escapeText(metric.source+" · "+metric.window) : "Unavailable for this window")+'</span></th>';
   const table = displayed.length
     ? '<div class="table-wrap combined-meta"><table id="meta-rankings"><caption class="visually-hidden">Metagame share, win rate and match count</caption>'+
-      '<thead><tr><th scope="col">Archetype</th>'+metricHeading(share?.source==="MTGGoldfish"?"Reference share":"Share",share)+
-      metricHeading("Win rate",rates)+metricHeading("Matches",rates)+'</tr></thead><tbody>'+
+      '<thead><tr><th scope="col">Archetype</th>'+metricHeading(share?.source==="MTGGoldfish"?"Reference share":"Share",share,"share")+
+      metricHeading("Win rate",rates,"winRate")+metricHeading("Matches",rates)+'</tr></thead><tbody>'+
       displayed.map((row,index)=>{
         const yours = owned.has(joinKey(row.name));
         const name = link(goldfishArchetypeUrl(metaFormat,row.name),row.name,"meta-archetype-link") || escapeText(row.name);
@@ -923,14 +992,14 @@ function showDecks() {
   const savedSnapshots = saved.length ? '<details><summary>Saved snapshots ('+saved.length+')</summary>'+saved.map(snapshot=>
     '<details><summary>'+escapeText(snapshot.window+" · "+snapshot.source)+'</summary><div class="table-wrap"><table><thead><tr><th>Archetype</th><th>Share</th></tr></thead><tbody>'+
     snapshot.rows.map(row=>'<tr><td>'+escapeText(row[0])+'</td><td>'+percentage(row[1])+'</td></tr>').join("")+'</tbody></table></div></details>').join("")+'</details>' : "";
-  app.innerHTML = '<div class="deck-sections"><section aria-labelledby="your-decks-title"><div class="heading"><h2 id="your-decks-title">Your decks</h2>'+
-    (accountPhase==="ready" && state.decks.length ? button("+ Add deck","deck","",true) : "")+'</div><div class="stack">'+
-    (accountPlaceholder("your decks") || state.decks.map(deckCard).join("") || '<div class="empty"><h3>Start with a deck you play</h3><p class="muted">Save a deck and log matches to track your results by opponent archetype.</p>'+button("+ Add your first deck","deck","",true)+'</div>')+
-    (accountPhase==="ready" ? '<p class="small muted">Decks and matches sync to your account. Win and loss percentages include draws in the total.</p>' : "")+'</div></section>'+
+  app.innerHTML = '<div class="deck-sections">'+
     '<section class="panel" aria-labelledby="metagame-title"><div class="heading"><h2 id="metagame-title">Metagame</h2><div class="actions">'+refreshControls("meta","Get the latest meta")+'</div></div>'+
-    '<label>Format<select id="meta-format">'+options(formats,metaFormat)+'</select></label>'+windowSlider+
-    (share?.source==="MTGGoldfish" ? '<p class="small muted">Exact dates for MTGGoldfish reference share are unverified.</p>' : "")+table+expand+
+    '<div class="meta-controls"><label>Format<select id="meta-format">'+options(formats,metaFormat)+'</select></label>'+
+    (share && rates ? '<label>Rank by<select id="meta-rank-by"><option value="share"'+(rankBy==="share"?' selected':'')+'>Metagame share</option><option value="winRate"'+(rankBy==="winRate"?' selected':'')+'>Match win rate</option></select></label>' : "")+
+    '</div>'+windowSlider+(metaWindow===2 ? metagameMovers(metaFormat) : "")+
+    (share?.source==="MTGGoldfish" ? '<p class="small muted">MTGGoldfish share is a reference snapshot. The date range applies to the MTGDecks win rates.</p>' : "")+table+expand+
     '<div class="actions">'+sourceLinks+button("Add snapshot","snapshot")+'</div>'+savedSnapshots+'</section>'+
+    (metaWindow===2 && metaFormat!=="7-Point Highlander" ? challengePlacements(metaFormat) : "")+
     window.MagicDashTools.recentTournaments(metaFormat)+'</div>';
 }
 const resultLabels = {W:"Win",L:"Loss",D:"Draw"};
@@ -959,7 +1028,7 @@ function showPlay() {
   const upcoming = event => event.competing && isUpcoming(event,now);
   const entries = [...state.playEvents].sort((a,b)=>Number(upcoming(b))-Number(upcoming(a)) ||
     (upcoming(a)?eventDate(a).localeCompare(eventDate(b)):eventDate(b).localeCompare(eventDate(a))));
-  app.innerHTML='<div class="heading"><h2>Your events</h2>'+
+  app.innerHTML=showPersonalDecks()+'<div class="heading" id="play-events-heading"><h2>Your events</h2>'+
     '<a class="button" href="#events">Find events</a></div><p class="small" id="compete-status"></p>'+
     '<section class="stack play-events" aria-label="Your events">'+(accountPlaceholder("your Play events") || entries.map(playEventCard).join("") ||
     '<div class="empty"><h3>No events in Play yet</h3><p class="muted">Choose Add to Play on an upcoming event to start logging matches here.</p></div>')+'</section>';
@@ -999,7 +1068,7 @@ function render() {
   else if (page==="#buy") window.MagicDashTools.renderBuy(app);
   else if (page==="#play") showPlay();
   else showEvents();
-  placeAccountSync();
+  placeAccountSync(page==="#play" ? document.getElementById("play-events-heading") : undefined);
 }
 const input = (label,name,value="",type="text",attrs="")=>'<label>'+label+'<input type="'+type+'" name="'+name+'" value="'+escapeText(value)+'" '+attrs+'></label>';
 const select = (label,name,values,value)=>'<label>'+label+'<select name="'+name+'">'+options(values,value)+'</select></label>';
@@ -1274,6 +1343,9 @@ app.addEventListener("click",event=>{
       break;
   }
 });
+app.addEventListener("toggle",event=>{
+  if (event.target.id==="play-decks" && event.target.isConnected) playDecksOpen = event.target.open;
+},true);
 app.addEventListener("input",event=>{
   if (event.target.id!=="meta-window") return;
   const label = metaWindows[Number(event.target.value)];
@@ -1291,8 +1363,9 @@ app.addEventListener("change",event=>{
     document.getElementById(id).focus();
     return;
   }
-  if (id!=="meta-format" && id!=="meta-window") return;
+  if (!["meta-format","meta-window","meta-rank-by"].includes(id)) return;
   if (id==="meta-format") metaFormat = value;
+  else if (id==="meta-rank-by") metaRankBy = value;
   else metaWindow = Number(value);
   metaExpanded = false;
   showDecks();

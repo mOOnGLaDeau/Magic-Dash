@@ -75,6 +75,18 @@ export function parseShare(html) {
   return rows.size>=4 ? [...rows.values()] : null;
 }
 
+export function parseChallengePlacements(html) {
+  const rows = new Map();
+  for (const [,path,body] of html.matchAll(/href=["']((?:https:\/\/deckscout\.fyi)?\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const match = plain(body).match(/^(\d+)\s+(.+?)\s+([\d,]+)\s+decks\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%(?:\s+[▲▼]?\s*([+-]\d+(?:\.\d+)?))?$/u);
+    if (!match) continue;
+    const [,rank,name,count,share,topEight,change] = match;
+    if (+share > 100 || +topEight > 100) continue;
+    rows.set(path,{rank:+rank,name,count:Number(count.replaceAll(",","")),share:+share,topEight:+topEight,change:change ? +change : null});
+  }
+  return rows.size >= 4 ? [...rows.values()] : null;
+}
+
 export async function refreshFeed(data) {
   const previous=await data.get("feed","json") || {};
   const now=new Date();
@@ -96,13 +108,22 @@ export async function refreshFeed(data) {
     const shareUrl="https://www.mtggoldfish.com/metagame/"+format.toLowerCase()+"#paper";
     const entry=feed.meta[format] ||= {};
     entry.rates ||= {};
+    const placementsUrl="https://deckscout.fyi/metagame/"+format.toLowerCase()+"/";
+    tasks.push(()=>refresh(format+" Challenge placements",placementsUrl,parseChallengePlacements,rows=>{
+      entry.placements={rows,url:placementsUrl,checkedAt};
+    }));
     tasks.push(()=>refresh(format+" share",shareUrl,parseShare,rows=>{
-      entry.share={rows,url:shareUrl,source:"MTGGoldfish",window:"fetched "+checkedAt.slice(0,10)};
+      const day=checkedAt.slice(0,10);
+      entry.share={rows,url:shareUrl,source:"MTGGoldfish",window:"fetched "+day};
+      entry.shareHistory=[...(entry.shareHistory || []).filter(snapshot=>snapshot.day!==day),
+        {day,rows:rows.map(([name,share])=>[name,share])}].slice(-15);
     }));
-    const ratesUrl="https://mtgdecks.net/"+format+"/winrates";
-    tasks.push(()=>refresh(format+" win rates",ratesUrl,html=>parseRates(html,180,now),result=>{
-      entry.rates[5]={...result,url:ratesUrl};
-    }));
+    for (const [index,days,path] of [[2,30,"/range:last30days"],[5,180,""]]) {
+      const ratesUrl="https://mtgdecks.net/"+format+"/winrates"+path;
+      tasks.push(()=>refresh(format+" "+days+"-day win rates",ratesUrl,html=>parseRates(html,days,now),result=>{
+        entry.rates[index]={...result,url:ratesUrl};
+      }));
+    }
   }
   for (let i=0;i<tasks.length;i+=4) await Promise.all(tasks.slice(i,i+4).map(run=>run()));
   await data.put("feed",JSON.stringify(feed));
