@@ -45,17 +45,54 @@ async function startAccounts() {
     actions.append(button);
   }
 
-  function field(label, name, type, autocomplete) {
+  function field(label, name, type, autocomplete, value = "", required = true) {
     const wrapper = document.createElement("label");
     const input = document.createElement("input");
     input.type = type;
     input.name = name;
     input.autocomplete = autocomplete;
-    input.required = true;
-    if (name === "name") input.maxLength = 100;
+    input.required = required;
+    input.value = typeof value === "string" ? value : "";
+    if (type === "text") input.maxLength = name === "street" ? 160 : 100;
     if (["signup","password"].includes(mode) && type === "password") input.minLength = 8;
     wrapper.append(label, input);
     fields.append(wrapper);
+  }
+
+  const countryCodes = "AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW".split(" ");
+  const countries = countryCodes.map(code=>[code,countryNames.of(code)]).sort((a,b)=>a[1].localeCompare(b[1]));
+
+  function choice(label, name, items, selected, required = false) {
+    const wrapper = document.createElement("label");
+    const control = document.createElement("select");
+    control.name = name;
+    control.required = required;
+    if (name === "country") control.autocomplete = "country";
+    for (const [value,text] of items) control.add(new Option(text,value));
+    control.value = selected;
+    wrapper.append(label,control);
+    fields.append(wrapper);
+  }
+
+  function locationFields(user) {
+    const metadata = user?.user_metadata || {};
+    const address = metadata.address || {};
+    field("Street address (optional)", "street", "text", "address-line1", address.street, false);
+    field("City or suburb", "city", "text", "address-level2", address.city);
+    field("State or province (optional)", "region", "text", "address-level1", address.region, false);
+    field("Postcode (if applicable)", "postcode", "text", "postal-code", address.postcode, false);
+    choice("Country", "country", [["","Select a country"],...countries], address.country || "", true);
+    if (user) {
+      const saved = typeof metadata.timeZone === "string" ? metadata.timeZone : "";
+      const zones = [...new Set(["UTC",deviceZone,...(Intl.supportedValuesOf?.("timeZone") || []),...(saved ? [saved] : [])])].sort();
+      choice("Time zone", "timeZone", [["","Automatic ("+deviceZone+")"],...zones.map(value=>[value,value.replaceAll("_"," ")])], saved);
+    }
+  }
+
+  function locationData(values) {
+    const address = Object.fromEntries(["street","city","region","postcode","country"].map(key=>[key,values[key]?.trim() || ""]));
+    if (!address.city || !countryCodes.includes(address.country)) throw Error("Enter your city or suburb and select a country.");
+    return {address,timeZone:values.timeZone || null};
   }
 
   function setStatus(message) {
@@ -107,6 +144,8 @@ async function startAccounts() {
       const identity = document.createElement("p");
       identity.textContent = [active.user.user_metadata?.name, active.user.email].filter(Boolean).join(" · ");
       fields.append(identity);
+      locationFields(active.user);
+      action("Save account settings", null, true);
       if (active.failed) action("Retry sync", () => retry(active));
       if (active.conflict) {
         action("Download unsynced data", () => download(active.record.data));
@@ -119,6 +158,7 @@ async function startAccounts() {
       if (mode === "signup") field("Name", "name", "text", "name");
       field("Email", "email", "email", "email");
       if (mode !== "reset") field("Password", "password", "password", mode === "signup" ? "new-password" : "current-password");
+      if (mode === "signup") locationFields();
       action({signin: "Sign in", signup: "Create account", reset: "Send reset email"}[mode], null, true);
       if (mode === "signin") {
         action("Create account", () => showMode("signup"));
@@ -278,12 +318,24 @@ async function startAccounts() {
   }
 
   function switchUser(user) {
-    if (active?.user.id === user?.id && accountPhase !== "checking") return;
+    if (active?.user.id === user?.id && accountPhase !== "checking") {
+      if (active && user) {
+        const previous = active.user.user_metadata || {};
+        active.user = user;
+        if (JSON.stringify(previous.address) !== JSON.stringify(user.user_metadata?.address) ||
+            previous.timeZone !== user.user_metadata?.timeZone) {
+          applyAccountLocation(user);
+          render();
+        }
+      }
+      return;
+    }
     if (active?.record && !active.record.dirty) {
       try { localStorage.removeItem(active.key); } catch {}
     }
     if (!user?.email_confirmed_at) {
       active = undefined;
+      applyAccountLocation();
       accountPhase = "signed-out";
       setAccountSync();
       connectAccountStorage(undefined);
@@ -298,6 +350,8 @@ async function startAccounts() {
       if (profile.record) profile.record.data = {...empty(), ...profile.record.data};
     } catch {}
     active = profile;
+    mode = "signin";
+    applyAccountLocation(user);
     accountPhase = "loading";
     setAccountSync();
     connectAccountStorage({
@@ -364,7 +418,8 @@ async function startAccounts() {
   close.addEventListener("click", () => { if (!busy || mode !== "delete") dialog.close(); });
   form.addEventListener("submit", event => {
     event.preventDefault();
-    const {email, password, name} = Object.fromEntries(new FormData(form));
+    const values = Object.fromEntries(new FormData(form));
+    const {email, password, name} = values;
     if (mode === "delete" && active) {
       const profile = active;
       void submitAuth(async () => {
@@ -384,7 +439,7 @@ async function startAccounts() {
         return {};
       });
     } else if (mode === "signup") {
-      void submitAuth(() => client.auth.signUp({email, password, options: {data: {name: name.trim()}, emailRedirectTo: redirectTo}}),
+      void submitAuth(() => client.auth.signUp({email, password, options: {data: {name: name.trim(), ...locationData(values)}, emailRedirectTo: redirectTo}}),
         () => setStatus("Check your inbox for the link to verify your email."));
     } else if (mode === "reset") {
       void submitAuth(() => client.auth.resetPasswordForEmail(email, {redirectTo}),
@@ -394,6 +449,13 @@ async function startAccounts() {
         showMode("signin");
         setStatus("Password updated.");
       });
+    } else if (active) {
+      const profile = active;
+      void submitAuth(async () => {
+        const result = await client.auth.updateUser({data:locationData(values)});
+        if (!result.error && active === profile) switchUser(result.data.user);
+        return result;
+      }, () => setStatus("Account settings saved."));
     } else void submitAuth(() => client.auth.signInWithPassword({email, password}));
   });
   window.addEventListener("online", () => { if (active) retry(active); });

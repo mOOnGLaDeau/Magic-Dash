@@ -284,7 +284,6 @@ dialog h2 {margin-bottom:4px}
 </div>
 </details>
 </div>
-<span class="zone tag">Brisbane · AEST</span>
 </div></header>
 <main class="frame">
 <section class="hero" id="page-hero">
@@ -301,7 +300,7 @@ dialog h2 {margin-bottom:4px}
 <div class="account-sync" id="account-sync"><p class="small" id="account-sync-message" role="status"></p><button class="button" type="button" id="account-sync-action" hidden></button></div>
 <p id="app-feedback" class="visually-hidden" role="status"></p>
 </main>
-<footer class="footer"><div class="frame"><span>Magic Dash · Magic: The Gathering tracker</span><span>All event times shown in Brisbane time (AEST)</span></div></footer>
+<footer class="footer"><div class="frame"><span>Magic Dash · Magic: The Gathering tracker</span></div></footer>
 <dialog id="editor" aria-labelledby="editor-title"></dialog>
 <dialog id="account-dialog" aria-labelledby="account-title">
   <form id="account-form">
@@ -387,7 +386,30 @@ meta["7-Point Highlander"] = {"TopDeck.gg":{window:"13 May – 5 Nov 2026",asOf:
 <script>
 "use strict";
 
-const zone = "Australia/Brisbane";
+const deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+let zone = deviceZone;
+let homeAddress = {};
+const countryNames = new Intl.DisplayNames(["en"],{type:"region"});
+const homeCountry = () => homeAddress.country || "AU";
+const homeRegionLabel = () => homeAddress.country ? countryNames.of(homeCountry()) : "Brisbane";
+
+function applyAccountLocation(user) {
+  const address = user?.user_metadata?.address;
+  const previousCountry = homeCountry();
+  const next = address && typeof address === "object" && /^[A-Z]{2}$/.test(address.country) ? address : {};
+  if (JSON.stringify(homeAddress) !== JSON.stringify(next)) {
+    homeAddress = next;
+    driveEstimates.clear();
+    tripStatus = "";
+    tripRequest++;
+    tripBusy = false;
+  }
+  if (previousCountry !== homeCountry()) scope = "local";
+  const preferred = user?.user_metadata?.timeZone;
+  try {
+    zone = preferred ? new Intl.DateTimeFormat("en",{timeZone:preferred}).resolvedOptions().timeZone : deviceZone;
+  } catch { zone = deviceZone; }
+}
 const app = document.querySelector("#app");
 const editor = document.querySelector("#editor");
 const escapeText = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[ch]);
@@ -400,9 +422,21 @@ const dateFormat = (value,options) => new Intl.DateTimeFormat("en-AU",{timeZone:
 const isoLocal = value => new Intl.DateTimeFormat("sv-SE",{timeZone:zone,year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(value));
 const today = () => isoLocal(Date.now());
 const eventDate = item => item.date || isoLocal(item.start);
-const localDate = date => date+"T12:00:00+10:00";
+const localDate = date => date+"T12:00:00Z";
 const dayText = value => dateFormat(value,{weekday:"short",day:"numeric",month:"short",year:"numeric"});
-const timeText = value => dateFormat(value,{hour:"numeric",minute:"2-digit"});
+const dateOnlyText = value => dateFormat(localDate(value),{weekday:"short",day:"numeric",month:"short",year:"numeric",timeZone:"UTC"});
+const zonedTime = value => dateFormat(value,{hour:"numeric",minute:"2-digit",timeZoneName:"short"});
+const clockInput = value => dateFormat(value,{hour:"2-digit",minute:"2-digit",hourCycle:"h23"});
+function eventStart(date,time) {
+  const target = date+"T"+time;
+  let timestamp = Date.parse(target+"Z");
+  for (let attempt=0; attempt<3; attempt++) {
+    const shown = isoLocal(timestamp)+"T"+clockInput(timestamp);
+    if (shown === target) return new Date(timestamp).toISOString();
+    timestamp += Date.parse(target+"Z") - Date.parse(shown+"Z");
+  }
+  throw Error("This time does not occur on that date in "+zone+". Choose another time.");
+}
 const button = (label,action,id="",primary=false) => '<button type="button" class="button'+(primary?" primary":"")+'" data-action="'+action+'" data-id="'+escapeText(id)+'">'+escapeText(label)+'</button>';
 const options = (values,selected) => values.map(value=>'<option'+(value===selected?" selected":"")+'>'+escapeText(value)+'</option>').join("");
 const fmt = n => Number(n).toLocaleString("en-AU");
@@ -481,6 +515,7 @@ const venueAddresses = {
 const venueLocations = new Map();
 const driveEstimates = new Map();
 let tripBusy = false;
+let tripRequest = 0;
 let tripStatus = "";
 const venueAddress = item => item.scope==="local" ? venueAddresses[normalize(item.venue)] : undefined;
 
@@ -511,21 +546,28 @@ function updateDriveEstimates() {
   const status = document.querySelector("#trip-status");
   if (!status) return;
   status.textContent = tripStatus;
-  actionControl("estimate-drive","").setAttribute("aria-disabled",String(tripBusy));
+  ["estimate-drive","estimate-home-drive"].forEach(action=>{
+    actionControl(action,"")?.setAttribute("aria-disabled",String(tripBusy));
+  });
   app.querySelectorAll("[data-drive-address]").forEach(label=>{
     label.textContent = driveLabel(label.dataset.driveAddress);
   });
 }
 
-async function estimateDrives() {
+async function estimateDrives(fromHome = false) {
   if (tripBusy) return;
   tripBusy = true;
-  tripStatus = "Getting your location…";
+  const request = ++tripRequest;
+  tripStatus = fromHome ? "Looking up your saved area." : "Getting your location.";
   updateDriveEstimates();
   try {
-    const {coords} = await new Promise((resolve,reject)=>{
-      navigator.geolocation.getCurrentPosition(resolve,reject,{timeout:10000,maximumAge:60000});
-    });
+    const point = fromHome
+      ? await venueLocation([homeAddress.city,homeAddress.region,homeAddress.postcode,"Australia"].filter(Boolean).join(", "))
+      : await new Promise((resolve,reject)=>{
+        navigator.geolocation.getCurrentPosition(({coords})=>resolve([coords.longitude,coords.latitude]),reject,{timeout:10000,maximumAge:60000});
+      });
+    if (request !== tripRequest) return;
+    if (!point) throw Error("address");
     driveEstimates.clear();
     tripStatus = "Estimating drives…";
     updateDriveEstimates();
@@ -534,12 +576,13 @@ async function estimateDrives() {
     const destinations = results.flatMap((result,index)=>result.status==="fulfilled" && result.value ?
       [{address:addresses[index],point:result.value}] : []);
     if (!destinations.length) throw Error();
-    const origin = [coords.longitude.toFixed(3),coords.latitude.toFixed(3)];
+    const origin = point.map(value=>value.toFixed(3));
     const points = [origin,...destinations.map(item=>item.point)].join(";");
     const query = new URLSearchParams({sources:"0",destinations:destinations.map((_,index)=>index+1).join(";"),annotations:"distance,duration"});
     const response = await fetch("https://routing.openstreetmap.de/routed-car/table/v1/driving/"+points+"?"+query,{signal:AbortSignal.timeout(12000)});
     if (!response.ok) throw Error();
     const {distances,durations} = await response.json();
+    if (request !== tripRequest) return;
     destinations.forEach(({address},index)=>{
       const distance = distances?.[0]?.[index];
       const duration = durations?.[0]?.[index];
@@ -548,11 +591,14 @@ async function estimateDrives() {
     if (!driveEstimates.size) throw Error();
     tripStatus = driveEstimates.size===addresses.length ? "Estimates exclude live traffic." : "Some routes were unavailable. Estimates exclude live traffic.";
   } catch (error) {
-    tripStatus = error?.code===1 ? "Allow location access in your browser to estimate drives." :
+    if (request !== tripRequest) return;
+    tripStatus = error?.message==="address" ? "Could not find your saved area. Check your address or use your device location." : error?.code===1 ? "Allow location access in your browser to estimate drives." :
       error?.code===2 || error?.code===3 ? "Couldn’t get your location. Try again." : "Drive estimates are unavailable. Try again.";
   } finally {
-    tripBusy = false;
-    updateDriveEstimates();
+    if (request === tripRequest) {
+      tripBusy = false;
+      updateDriveEstimates();
+    }
   }
 }
 
@@ -561,11 +607,11 @@ function eventCard(item) {
   const trip = address ? '<span data-drive-address="'+escapeText(address)+'">'+escapeText(driveLabel(address))+'</span>' : "";
   const competing = state.playEvents.some(event=>event.id===item.id && event.competing);
   const first = item.start || localDate(item.date);
-  const last = item.through && item.through !== item.date ? " – "+dayText(localDate(item.through)) : "";
+  const last = item.through && item.through !== item.date ? " – "+dateOnlyText(item.through) : "";
   const when = item.start
-    ? dayText(first)+" · "+timeText(first)+(item.end ? " – "+timeText(item.end) : "")+" AEST"
-    : dayText(first)+last+" · Event-local dates · Time TBA";
-  return '<article class="event'+(competing?" is-competing":"")+'"><div class="date" aria-hidden="true"><span class="num">'+dateFormat(first,{month:"short"})+'</span><strong>'+dateFormat(first,{day:"numeric"})+'</strong></div>'+
+    ? dayText(first)+" · "+zonedTime(first)+(item.end ? " – "+(isoLocal(first)===isoLocal(item.end) ? "" : dayText(item.end)+" · ")+zonedTime(item.end) : "")
+    : dateOnlyText(item.date)+last+" · Event-local dates · Time TBA";
+  return '<article class="event'+(competing?" is-competing":"")+'"><div class="date" aria-hidden="true"><span class="num">'+dateFormat(first,{month:"short",...(item.start ? {} : {timeZone:"UTC"})})+'</span><strong>'+dateFormat(first,{day:"numeric",...(item.start ? {} : {timeZone:"UTC"})})+'</strong></div>'+
     '<div><div class="tags"><span class="tag">'+escapeText(item.format)+'</span><span class="tag alt">'+escapeText(item.kind)+'</span></div><h3>'+escapeText(item.title)+'</h3>'+
     '<p class="muted small">'+escapeText(item.venue)+trip+'<br>'+escapeText(when)+(item.note ? '<br>'+escapeText(item.note) : "")+
     (item.scope==="major" && !item.stream ? '<br>Stream TBA' : "")+'</p><div class="actions">'+
@@ -612,7 +658,7 @@ const refreshStatus = {events:{},meta:{}};
 function refreshTimestamp(kind) {
   const {checkedAt,partial} = refreshStatus[kind];
   if (!checkedAt) return "Last updated time unavailable";
-  return (partial ? "Last checked " : "Last updated ")+dayText(checkedAt)+" at "+timeText(checkedAt)+" AEST";
+  return (partial ? "Last checked " : "Last updated ")+dayText(checkedAt)+" at "+zonedTime(checkedAt);
 }
 function refreshControls(kind,label) {
   const {busy,message} = refreshStatus[kind];
@@ -675,6 +721,13 @@ async function refreshPageData(kind, initial = false) {
 function isUpcoming(item,now) {
   return item.start ? (item.end ? Date.parse(item.end)>=now : eventDate(item)>=isoLocal(now)) : (item.through||item.date)>=isoLocal(now);
 }
+const majorCountries = {
+  USA:"US", China:"CN", Thailand:"TH", Brazil:"BR", Mexico:"MX", "Australia / NZ":"AU",
+  Canada:"CA", Japan:"JP", Spain:"ES", Taiwan:"TW", Netherlands:"NL"
+};
+function listingCountry(item) {
+  return item.country || (item.scope==="local" ? "AU" : majorCountries[item.venue.split(", ").at(-1)]);
+}
 function showRecentNews(now) {
   scanPanel.hidden = scope!=="local";
   if (scanPanel.hidden) return;
@@ -682,17 +735,17 @@ function showRecentNews(now) {
   const oldest = new Date(currentDate+"T00:00:00Z");
   oldest.setUTCDate(oldest.getUTCDate()-6);
   const cutoff = oldest.toISOString().slice(0,10);
-  const added = eventListings().filter(item=>item.scope==="local" && eventCategory(item)==="Competitive" &&
+  const added = eventListings().filter(item=>item.scope==="local" && listingCountry(item)===homeCountry() && eventCategory(item)==="Competitive" &&
     dateKey(item.discoveredOn) && item.discoveredOn>=cutoff && item.discoveredOn<=currentDate).sort((a,b)=>
     b.discoveredOn.localeCompare(a.discoveredOn) || eventDate(a).localeCompare(eventDate(b)));
   scanStatus.hidden = added.length > 0;
   document.querySelector("#scan-details").hidden = added.length === 0;
   document.querySelector("#scan-count").textContent = "("+added.length+")";
   scanItems.innerHTML = added.map(item=>{
-    const when = item.start ? dayText(item.start)+" · "+timeText(item.start)+" AEST" : dayText(localDate(item.date))+" · Time TBA";
+    const when = item.start ? dayText(item.start)+" · "+zonedTime(item.start) : dateOnlyText(item.date)+" · Time TBA";
     return "<li>"+link(item.url,item.title,"")+
       '<p class="muted">'+escapeText(item.format+" · "+item.venue)+"<br>"+escapeText(when)+
-      "<br>Added "+escapeText(dayText(localDate(item.discoveredOn)))+"</p></li>";
+      "<br>Added "+escapeText(dateOnlyText(item.discoveredOn))+"</p></li>";
   }).join("");
 }
 
@@ -700,19 +753,24 @@ function showEvents() {
   const now = Date.now();
   showRecentNews(now);
   const listings = eventListings()
-    .filter(item=>item.scope===scope && (scope==="major" || eventCategory(item)===category) &&
+    .filter(item=>(scope==="major" ? item.scope==="major" : listingCountry(item)===homeCountry() &&
+      (item.scope==="local" || Boolean(homeAddress.country)) && eventCategory(item)===category) &&
       (filter==="All formats" || item.format===filter) &&
       isUpcoming(item,now))
     .sort((a,b)=>(a.start||localDate(a.date)).localeCompare(b.start||localDate(b.date)));
   const filterSelect = (label,id,values,selected) => '<label>'+label+'<select id="'+id+'" aria-controls="event-results">'+options(values,selected)+'</select></label>';
-  const filters = filterSelect("Region","event-region",["Brisbane","Major events"],scope==="local"?"Brisbane":"Major events")+
+  const filters = filterSelect("Region","event-region",[homeRegionLabel(),"Major events"],scope==="local"?homeRegionLabel():"Major events")+
     (scope==="local"?filterSelect("Play type","event-category",eventCategories,category):"")+
     filterSelect("Format","event-format",["All formats",...formats],filter);
   const resultType = scope==="local" ? category.toLowerCase()+" " : "";
   app.innerHTML = '<div class="event-filters" role="group" aria-label="Event filters">'+filters+'</div>'+
     '<section class="stack" id="event-results" aria-labelledby="event-results-title">'+
-    '<div class="event-results-heading"><div><h2 id="event-results-title">Upcoming events</h2><p class="small muted">'+listings.length+' '+(listings.length===1?"event":"events")+'</p></div><div class="actions">'+button("+ Add event","event")+refreshControls("events","Look for new events")+'</div></div>'+
-    (scope==="local" && listings.some(venueAddress) ? '<div class="trip-tools"><button class="button" type="button" data-action="estimate-drive" data-id="" aria-disabled="'+tripBusy+'" aria-describedby="trip-info">Estimate drive from my location</button><p class="small muted" id="trip-info">Shares approximate location with <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS</a> for routing · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Fix the map</a></p><p class="small muted" id="trip-status" role="status">'+escapeText(tripStatus)+'</p></div>' : "")+
+    '<div class="event-results-heading"><div><h2 id="event-results-title">Upcoming events</h2><p class="small muted">'+listings.length+' '+(listings.length===1?"event":"events")+'</p></div><div class="actions">'+button("+ Add event","event")+(scope==="local" && homeCountry()==="AU" ? refreshControls("events","Look for new events") : "")+'</div></div>'+
+    (scope==="local" && homeAddress.country ? '<div class="actions">'+link("https://locator.wizards.com/","Find nearby events on Wizards")+
+      '<p class="muted small">'+(homeCountry()==="AU" ? "Store feed covers Brisbane." : "Browse nearby stores and events in the Wizards locator.")+'</p></div>' : "")+
+    (scope==="local" && listings.some(venueAddress) ? '<div class="trip-tools"><button class="button" type="button" data-action="estimate-drive" data-id="" aria-disabled="'+tripBusy+'" aria-describedby="trip-info">Estimate drive from my location</button>'+
+      (homeAddress.country==="AU" && homeAddress.city ? '<button class="button" type="button" data-action="estimate-home-drive" data-id="" aria-disabled="'+tripBusy+'" aria-describedby="trip-info">Estimate from saved area</button>' : "")+
+      '<p class="small muted" id="trip-info">Uses your approximate device location or saved suburb and postcode for routing with <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS</a> for routing · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Fix the map</a></p><p class="small muted" id="trip-status" role="status">'+escapeText(tripStatus)+'</p></div>' : "")+
     '<p class="small" id="compete-status" role="status"></p>'+
     (listings.map(eventCard).join("") || '<div class="empty"><h3>No verified upcoming '+resultType+(filter==="All formats"?"":escapeText(filter)+" ")+'listings</h3><p class="muted">Try another filter or add an event from an organiser.</p></div>')+'</section>';
 }
@@ -880,8 +938,8 @@ function playEventCard(event) {
   const upcoming = isUpcoming(event,Date.now());
   const badge = event.competing && upcoming ? '<span class="tag competing">Competing</span>' :
     '<span class="tag alt">'+(upcoming?"History":"Past event")+'</span>';
-  const date = dayText(localDate(eventDate(event)));
-  const dateRange = event.through && event.through!==eventDate(event) ? " – "+dayText(localDate(event.through)) : "";
+  const date = dateOnlyText(eventDate(event));
+  const dateRange = event.through && event.through!==eventDate(event) ? " – "+dateOnlyText(event.through) : "";
   const record = statsFor(event.matches);
   return '<article class="panel play-event'+(event.competing && upcoming?" is-competing":"")+'"><div class="heading"><div>'+
     '<div class="tags">'+badge+'<span class="tag">'+escapeText(event.format)+'</span></div><h3 id="play-event-'+escapeText(encodeURIComponent(event.id))+'" tabindex="-1">'+escapeText(event.title)+'</h3>'+
@@ -1119,7 +1177,7 @@ function editPlayMatch(id) {
   const deckOptions = decks.map(deck=>'<option value="'+escapeText(deck.id)+'"'+(deck.id===selectedDeck?" selected":"")+'>'+escapeText(deck.name)+'</option>').join("");
   const withMatches = matches => ({...state,playEvents:replace(state.playEvents,{...event,matches})});
   dialog(match?"Edit event match":"Log event match",
-    '<p class="small muted play-match-form-date">'+escapeText(event.title+" · "+dayText(localDate(eventDate(event))))+'</p>'+
+    '<p class="small muted play-match-form-date">'+escapeText(event.title+" · "+dateOnlyText(eventDate(event)))+'</p>'+
     '<div class="two"><label>Your deck<select name="deckId"><option value="">Assign later</option>'+deckOptions+'</select></label>'+
     '<label>Result<select name="result" required><option value="">Choose result</option>'+options(Object.values(resultLabels),resultLabels[match?.result])+'</select></label></div>'+
     input("Opponent archetype","opponent",match?.opponent,"text",'required maxlength="80" list="play-opponents" placeholder="e.g. Domain Zoo"')+
@@ -1137,20 +1195,22 @@ function editPlayMatch(id) {
 function editEvent(id) {
   const event = state.customEvents.find(item=>item.id===id);
   const date = event ? eventDate(event) : today();
+  const time = event?.start ? clockInput(event.start) : "";
   dialog(event?"Edit event":"Add an event",
     input("Event name","title",event?.title,"text",'required maxlength="100"')+
-    '<div class="two">'+select("Where","scope",["Brisbane","Major event"],(event?.scope||scope)==="local"?"Brisbane":"Major event")+
+    '<div class="two">'+select("Where","scope",["Local event","Major event"],(event?.scope||scope)==="local"?"Local event":"Major event")+
     select("Format","format",formats,event?.format||filter)+'</div>'+
-    select("Brisbane event category","category",eventCategories,event ? eventCategory(event) : category)+
+    select("Local event category","category",eventCategories,event ? eventCategory(event) : category)+
     input("Venue or city","venue",event?.venue,"text",'required maxlength="100"')+
-    '<div class="two">'+input("Date","date",date,"date","required")+input("Start time (AEST, optional)","time",event?.start?.slice(11,16),"time")+'</div>'+
+    '<div class="two">'+input("Date","date",date,"date","required")+input("Start time ("+zone+", optional)","time",time,"time")+'</div>'+
     input("Event or registration URL","url",event?.url,"url",'required placeholder="https://"')+
     input("Stream URL (optional)","stream",event?.stream,"url",'placeholder="https://"'),
     fields=>{
       if (!fields.title || !fields.venue || !safeUrl(fields.url) || (fields.stream && !safeUrl(fields.stream))) throw Error("Enter a title, venue and valid HTTPS links.");
-      const timed = fields.time ? {start:fields.date+"T"+fields.time+":00+10:00"} : {date:fields.date};
-      const eventScope = fields.scope==="Brisbane" ? "local" : "major";
-      const entry = {...timed,id:event?.id||uuid(),custom:true,scope:eventScope,discoveredOn:event ? event.discoveredOn : today(),
+      const timed = fields.time ? {start:event?.start && fields.date===date && fields.time===time
+        ? event.start : eventStart(fields.date,fields.time)} : {date:fields.date};
+      const eventScope = fields.scope==="Local event" ? "local" : "major";
+      const entry = {...timed,id:event?.id||uuid(),custom:true,scope:eventScope,country:event ? listingCountry(event) || homeCountry() : homeCountry(),discoveredOn:event ? event.discoveredOn : today(),
         category:eventScope==="local" ? fields.category : undefined,kind:"Personal listing",format:fields.format,title:fields.title,venue:fields.venue,url:fields.url,stream:fields.stream};
       const tracked = state.playEvents.find(item=>item.id===entry.id);
       if (tracked?.matches.length && tracked.format!==entry.format) throw Error("This event has match history. Keep its original format.");
@@ -1188,7 +1248,7 @@ app.addEventListener("click",event=>{
   const control = event.target.closest("button[data-action]");
   if (!control) return;
   const {action,id} = control.dataset;
-  if (action === "estimate-drive") { void estimateDrives(); return; }
+  if (action === "estimate-drive" || action === "estimate-home-drive") { void estimateDrives(action==="estimate-home-drive"); return; }
   if (action === "refresh-events" || action === "refresh-meta") { void refreshPageData(action.slice(8)); return; }
   if (action === "account") { document.querySelector("#account-button").click(); return; }
   const reasons = {deck:"save a deck", match:"log a match", "play-match":"log a match",
@@ -1223,7 +1283,7 @@ app.addEventListener("input",event=>{
 app.addEventListener("change",event=>{
   const {id,value} = event.target;
   if (["event-region","event-category","event-format"].includes(id)) {
-    if (id==="event-region") { scope=value==="Brisbane"?"local":"major"; filter="All formats"; }
+    if (id==="event-region") { scope=value==="Major events"?"major":"local"; filter="All formats"; }
     if (id==="event-category") category=value;
     if (id==="event-format") filter=value;
     showEvents();

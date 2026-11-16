@@ -25,7 +25,7 @@
   const escape = value => String(value ?? "").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
   const keyFor = value => value.normalize("NFKD").replace(/\p{M}/gu,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
   const money = new Intl.NumberFormat("en-AU",{style:"currency",currency:"AUD",currencyDisplay:"code"});
-  const time = new Intl.DateTimeFormat("en-AU",{dateStyle:"medium",timeStyle:"short",timeZone:"Australia/Brisbane"});
+  const time = value => dateFormat(value,{day:"numeric",month:"short",year:"numeric",hour:"numeric",minute:"2-digit",timeZoneName:"short"});
   const validUrl = value => {
     try { const url=new URL(value); return url.protocol==="https:" && !url.username && !url.password ? url.href : ""; }
     catch { return ""; }
@@ -297,7 +297,7 @@
     list.innerHTML=entries.map((item,index)=>'<article class="shop-watch-card"><div class="shop-result-heading"><h4>'+escape(item.card)+'</h4>'+
       '<button class="button" type="button" data-watch-remove="'+index+'">Remove</button></div>'+
       (connected()?'<button class="button" type="button" data-scan-toggle="'+index+'">'+(trackedCards.has(keyFor(item.card))?"Stop scheduled scan":"Start scheduled scan")+'</button>':'')+
-      (item.checkedAt?'<p class="small muted">Last checked '+escape(time.format(new Date(item.checkedAt)))+' Brisbane time</p>':'')+
+      (item.checkedAt?'<p class="small muted">Last checked '+escape(time(item.checkedAt))+'</p>':'')+
       (item.newOffers.length?offerList(item.newOffers):'<p class="small muted">'+(item.checkedAt?"No new listings from checked stores on the latest scan.":"No scheduled scan available.")+'</p>')+
       '<details class="shop-sources"><summary>Search stores for '+escape(item.card)+'</summary>'+storeLinks(item.card)+'</details></article>').join("") ||
       '<p class="muted">Search for a card and choose Watch card to add it here.</p>';
@@ -351,7 +351,7 @@
     const last=tools.feed.checkedAt;
     const links=rows.map(item=>'<li><div>'+link(item.url,item.title)+'<small class="muted">'+escape(item.type)+'</small></div><time datetime="'+escape(item.date)+'">'+escape(item.date)+'</time></li>');
     return '<section class="panel recent-results"><h3>Recent '+escape(format)+' tournaments</h3>'+
-      (last?'<p class="small muted">Last attempted refresh '+escape(time.format(new Date(last)))+' Brisbane time.'+
+      (last?'<p class="small muted">Last attempted refresh '+escape(time(last))+'.'+
         (Object.values(tools.feed.status || {}).includes("previous data kept")?' Some sources kept their previous results.':'')+'</p>':
         '<p class="small muted">Showing saved results until the hourly feed is available.</p>')+
       (links.length?'<ul class="shop-list">'+links.slice(0,8).join("")+'</ul>':'<p class="small muted">No tournament results available for this format.</p>')+
