@@ -363,7 +363,7 @@ dialog h2 {margin-bottom:4px}
 <script src="account-config.js"></script>
 <script>
 const formats = ["Standard","Modern","Legacy","7-Point Highlander"];
-const eventFormats = [...formats,"cEDH"];
+const eventFormats = [...formats,"Commander","cEDH"];
 const wizards = "https://magic.wizards.com/en/news/announcements/magiccon-heads-to-japan-europe-and-the-us-in-2027";
 const twitch = "https://www.twitch.tv/magic";
 const worlds = "https://magic.gg/news/world-championship-32-viewers-guide";
@@ -684,13 +684,13 @@ function readScheduledEvents(scan) {
     scan ??= JSON.parse(document.querySelector("#brisbane-scheduled-scan").textContent);
     const valid = new Map();
     for (const event of scan.events) {
-      if (event.scope!=="local" || event.category!=="Competitive" ||
+      if (event.scope!=="local" || !eventCategories.includes(event.category) ||
           typeof event.id!=="string" || !event.id || typeof event.title!=="string" || !event.title ||
           typeof event.venue!=="string" || !event.venue || !eventFormats.includes(event.format) ||
           !dateKey(event.discoveredOn) || !safeUrl(event.url) ||
           !(event.start ? Number.isFinite(Date.parse(event.start)) : dateKey(event.date))) continue;
       if (event.end && (!event.start || !Number.isFinite(Date.parse(event.end)) || Date.parse(event.end)<Date.parse(event.start))) continue;
-      valid.set(event.id,{...event,through:undefined,scope:"local",category:"Competitive"});
+      valid.set(event.id,{...event,through:undefined,scope:"local"});
     }
     return [...valid.values()];
   } catch { return []; }

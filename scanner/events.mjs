@@ -5,6 +5,7 @@ const vault = "https://vaultgames.com.au";
 const collections = ["/collections/brisbane-events", "/collections/events"];
 const competitive = /\b(?:rcq|regional championship qualifier|store championship|win[- ]a[- ]box)\b/i;
 const cedh = /\b(?:cedh|competitive (?:commander|edh))\b/i;
+const commander = /\b(?:commander|edh)\b/i;
 const formats = /\b(?:standard|modern|legacy|7[- ]point highlander)\b/gi;
 const months = "january february march april may june july august september october november december".split(" ");
 
@@ -13,7 +14,9 @@ export function parseVaultEvent(html, handle, discoveredOn) {
   const formatNames = new Set(Array.from(title.matchAll(formats), ([format])=>format.toLowerCase().replace("7 point","7-point")));
   const isCedh = cedh.test(title);
   if (isCedh) formatNames.add("cedh");
-  if ((!isCedh && !competitive.test(title)) || formatNames.size!==1 || /\b(sealed|draft|limited)\b/i.test(title) || (!isCedh && /\bcommander\b/i.test(title))) return null;
+  else if (commander.test(title)) formatNames.add("commander");
+  const isCompetitive = isCedh || competitive.test(title);
+  if ((!isCompetitive && !formatNames.has("commander")) || formatNames.size!==1 || /\b(sealed|draft|limited)\b/i.test(title)) return null;
   const text = plain(html);
   const venue = text.match(/Event Location:\s*(Vault Games (?:Brisbane City|Clayfield))\b/i)?.[1];
   const date = text.match(/Date\s*&\s*Time of Event:\s*(\d{1,2}):(\d{2})\s*([ap]m)\s+(\d{1,2})\s+([a-z]+)\s+(\d{4})\b/i);
@@ -26,8 +29,8 @@ export function parseVaultEvent(html, handle, discoveredOn) {
   if (new Date(Date.UTC(+year,monthIndex,+day)).toISOString().slice(0,10)!==dayKey) return null;
   const time = two(+hour%12+(meridiem.toLowerCase()==="pm"?12:0))+":"+minute;
   const format = isCedh ? "cEDH" : [...formatNames][0].replace(/\b[a-z]/g,letter=>letter.toUpperCase());
-  const kind = /store championship/i.test(title) ? "Store Championship" : /win[- ]a[- ]box/i.test(title) ? "Win-a-box" : /rcq|regional championship qualifier/i.test(title) ? "RCQ" : "cEDH";
-  return {id:"scan-vault-"+handle,scope:"local",category:"Competitive",kind,title,venue,format,
+  const kind = /store championship/i.test(title) ? "Store Championship" : /win[- ]a[- ]box/i.test(title) ? "Win-a-box" : /rcq|regional championship qualifier/i.test(title) ? "RCQ" : isCedh ? "cEDH" : "Commander night";
+  return {id:"scan-vault-"+handle,scope:"local",category:isCompetitive ? "Competitive" : "Casual",kind,title,venue,format,
     start:dayKey+"T"+time+":00+10:00",discoveredOn,url:vault+"/products/"+handle};
 }
 
@@ -42,7 +45,7 @@ export async function refreshEvents(data, now=new Date()) {
     if (page.status!=="fulfilled") continue;
     for (const [,handle] of page.value.matchAll(/href=["'][^"'<>]*?\/products\/([a-z0-9-]+)(?=[?"'#])/gi)) {
       const label = handle.replaceAll("-"," ");
-      if (cedh.test(label) || competitive.test(label) && /\b(?:standard|modern|legacy|7 point highlander)\b/i.test(label)) handles.add(handle);
+      if (cedh.test(label) || commander.test(label) || competitive.test(label) && /\b(?:standard|modern|legacy|7 point highlander)\b/i.test(label)) handles.add(handle);
     }
   }
   let partial = pages.some(page=>page.status==="rejected") || handles.size>8;
