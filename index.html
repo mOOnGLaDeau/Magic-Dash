@@ -112,7 +112,7 @@
 .play-decks > summary{font-size:17px;font-weight:750}
 .play-decks[open] > summary{margin-bottom:14px}
 .meta-controls{display:flex;align-items:end;flex-wrap:wrap;gap:12px;margin-bottom:12px}
-.meta-controls label{flex:1 1 180px}
+.meta-controls label{flex:1 1 0;min-width:0}.meta-controls select{width:100%;min-width:0}
 .meta-trend{margin:16px 0}
 .deck-sections{display:grid;grid-template-columns:minmax(0,1fr);gap:30px}
 .deck-sections .heading{flex-direction:row;align-items:center}
@@ -314,6 +314,8 @@ dialog h2 {margin-bottom:4px}
   .deck-sections .panel .heading {flex-wrap:wrap}
   #shop-results .shop-list {grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+.past-event > summary {padding:12px;min-height:44px;cursor:pointer;font-weight:650;border-bottom:1px solid var(--line)}
+.past-event > summary span {margin-inline-start:8px}
 </style>
 </head>
 <body>
@@ -596,28 +598,22 @@ function updateDriveEstimates() {
   const status = document.querySelector("#trip-status");
   if (!status) return;
   status.textContent = tripStatus;
-  ["estimate-drive","estimate-home-drive"].forEach(action=>{
-    actionControl(action,"")?.setAttribute("aria-disabled",String(tripBusy));
-  });
   app.querySelectorAll("[data-drive-address]").forEach(label=>{
     label.textContent = driveLabel(label.dataset.driveAddress);
   });
 }
 
-async function estimateDrives(fromHome = false) {
+async function estimateDrives() {
   if (tripBusy) return;
   tripBusy = true;
   const request = ++tripRequest;
-  tripStatus = fromHome ? "Looking up your saved area." : "Getting your location.";
+  tripStatus = "Getting your location.";
   updateDriveEstimates();
   try {
-    const point = fromHome
-      ? await venueLocation([homeAddress.city,homeAddress.region,homeAddress.postcode,"Australia"].filter(Boolean).join(", "))
-      : await new Promise((resolve,reject)=>{
+    const point = await new Promise((resolve,reject)=>{
         navigator.geolocation.getCurrentPosition(({coords})=>resolve([coords.longitude,coords.latitude]),reject,{timeout:10000,maximumAge:60000});
       });
     if (request !== tripRequest) return;
-    if (!point) throw Error("address");
     driveEstimates.clear();
     tripStatus = "Estimating drives…";
     updateDriveEstimates();
@@ -642,7 +638,7 @@ async function estimateDrives(fromHome = false) {
     tripStatus = driveEstimates.size===addresses.length ? "Estimates exclude live traffic." : "Some routes were unavailable. Estimates exclude live traffic.";
   } catch (error) {
     if (request !== tripRequest) return;
-    tripStatus = error?.message==="address" ? "Could not find your saved area. Check your address or use your device location." : error?.code===1 ? "Allow location access in your browser to estimate drives." :
+    tripStatus = error?.code===1 ? "Allow location access in your browser to estimate drives." :
       error?.code===2 || error?.code===3 ? "Couldn’t get your location. Try again." : "Drive estimates are unavailable. Try again.";
   } finally {
     if (request === tripRequest) {
@@ -725,7 +721,7 @@ async function refreshPageData(kind, initial = false) {
     const control = app.querySelector('[data-action="refresh-'+kind+'"]');
     if (!control) return;
     control.setAttribute("aria-disabled",String(Boolean(status.busy)));
-    control.textContent = status.busy ? "Refreshing…" : kind==="events" ? "Look for new events" : "Get the latest meta";
+    control.textContent = status.busy ? "Refreshing…" : kind==="events" ? "Look for new events" : "Refresh data";
     app.querySelector('[data-refresh-time="'+kind+'"]').textContent = refreshTimestamp(kind);
     app.querySelector('[data-refresh-status="'+kind+'"]').textContent = status.message;
   };
@@ -818,14 +814,13 @@ function showEvents() {
   const resultType = scope==="local" ? category.toLowerCase()+" " : "";
   app.innerHTML = '<div class="event-filters" role="group" aria-label="Event filters">'+filters+'</div>'+
     '<section class="stack" id="event-results" aria-labelledby="event-results-title">'+
-    '<div class="event-results-heading"><div><h2 id="event-results-title">Upcoming events</h2><p class="small muted">'+listings.length+' '+(listings.length===1?"event":"events")+'</p></div><div class="actions">'+button("+ Add event","event")+(scope==="local" && homeCountry()==="AU" ? refreshControls("events","Look for new events") : "")+'</div></div>'+
-    (scope==="local" && homeAddress.country ? '<div class="actions">'+link("https://locator.wizards.com/","Find nearby events on Wizards")+
-      '<p class="muted small">'+(homeCountry()==="AU" ? "Store feed covers Brisbane." : "Browse nearby stores and events in the Wizards locator.")+'</p></div>' : "")+
-    (scope==="local" && listings.some(venueAddress) ? '<div class="trip-tools"><button class="button" type="button" data-action="estimate-drive" data-id="" aria-disabled="'+tripBusy+'" aria-describedby="trip-info">Estimate drive from my location</button>'+
-      (homeAddress.country==="AU" && homeAddress.city ? '<button class="button" type="button" data-action="estimate-home-drive" data-id="" aria-disabled="'+tripBusy+'" aria-describedby="trip-info">Estimate from saved area</button>' : "")+
-      '<p class="small muted" id="trip-info">Uses your approximate device location or saved suburb and postcode with <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS</a> for routing · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Fix the map</a></p><p class="small muted" id="trip-status" role="status">'+escapeText(tripStatus)+'</p></div>' : "")+
+    '<div class="event-results-heading"><div><h2 id="event-results-title">Upcoming events</h2><p class="small muted">'+listings.length+' '+(listings.length===1?"event":"events")+'</p></div></div>'+
+    (scope==="local" && listings.some(venueAddress) ? '<div class="trip-tools">'+
+      '<p class="small muted" id="trip-info">Uses your approximate device location with <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS</a> for routing · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Fix the map</a></p><p class="small muted" id="trip-status" role="status">'+escapeText(tripStatus)+'</p></div>' : "")+
     '<p class="small" id="compete-status" role="status"></p>'+
-    (listings.map(eventCard).join("") || '<div class="empty"><h3>No verified upcoming '+resultType+(filter==="All formats"?"":escapeText(filter)+" ")+'listings</h3><p class="muted">Try another filter or add an event from an organiser.</p></div>')+'</section>';
+    (scope==="local" && homeCountry()==="AU" ? refreshControls("events","Look for new events") : "")+
+    (listings.map(eventCard).join("") || '<div class="empty"><h3>No verified upcoming '+resultType+(filter==="All formats"?"":escapeText(filter)+" ")+'listings</h3><p class="muted">Try another filter.</p></div>')+'</section>';
+  if (document.getElementById("trip-status") && !tripStatus) void estimateDrives();
 }
 
 function snapshots(format) {
@@ -1026,10 +1021,7 @@ function showDecks() {
       (metaFormat==="7-Point Highlander"?' Choose 6 months to see the TopDeck.gg snapshot.':'')+'</p>';
   const expand = limit>10
     ? '<button type="button" class="button meta-expand" data-action="expand-meta" aria-controls="meta-rankings" aria-expanded="'+metaExpanded+'">'+(metaExpanded?'Show top 10':'Expand to top '+limit)+'</button>' : "";
-  const windowLabel = metaWindows[metaWindow];
-  const windowSlider = '<label class="meta-window">Time window <output id="meta-window-value" for="meta-window">'+windowLabel+'</output>'+
-    '<input id="meta-window" type="range" min="0" max="5" step="1" value="'+metaWindow+'" aria-valuetext="'+windowLabel+'"></label>'+
-    '<div class="meta-window-labels" aria-hidden="true">'+metaWindows.map((label,index)=>'<span aria-current="'+(metaWindow===index)+'">'+label+'</span>').join("")+'</div>';
+  const windowSelect = '<label>Time window<select id="meta-window">'+metaWindows.map((label,index)=>'<option value="'+index+'"'+(index===metaWindow?" selected":"")+'>'+label+'</option>').join("")+'</select></label>';
   const sourceLinks = metaFormat==="7-Point Highlander"
     ? link(meta[metaFormat]["TopDeck.gg"].url,"TopDeck.gg ↗")
     : link(meta[metaFormat].MTGGoldfish.url,"MTGGoldfish ↗")+link(rates?.url || "https://mtgdecks.net/"+metaFormat+"/winrates","MTGDecks.net ↗");
@@ -1038,24 +1030,24 @@ function showDecks() {
     '<details><summary>'+escapeText(snapshot.window+" · "+snapshot.source)+'</summary><div class="table-wrap"><table><thead><tr><th>Archetype</th><th>Share</th></tr></thead><tbody>'+
     snapshot.rows.map(row=>'<tr><td>'+escapeText(row[0])+'</td><td>'+percentage(row[1])+'</td></tr>').join("")+'</tbody></table></div></details>').join("")+'</details>' : "";
   app.innerHTML = '<div class="deck-sections">'+
-    '<section class="panel" aria-labelledby="metagame-title"><div class="heading"><h2 id="metagame-title">Metagame</h2><div class="actions">'+refreshControls("meta","Get the latest meta")+'</div></div>'+
+    '<section class="panel" aria-labelledby="metagame-title"><div class="heading"><h2 id="metagame-title">Metagame</h2><div class="actions">'+refreshControls("meta","Refresh data")+'</div></div>'+
     '<div class="meta-controls"><label>Format<select id="meta-format">'+options(formats,metaFormat)+'</select></label>'+
     (share && rates ? '<label>Rank by<select id="meta-rank-by"><option value="share"'+(rankBy==="share"?' selected':'')+'>Metagame share</option><option value="winRate"'+(rankBy==="winRate"?' selected':'')+'>Match win rate</option></select></label>' : "")+
-    '</div>'+windowSlider+(metaWindow===2 ? metagameMovers(metaFormat) : "")+
+    windowSelect+'</div>'+(metaWindow===2 ? metagameMovers(metaFormat) : "")+
     (share?.source==="MTGGoldfish" ? '<p class="small muted">MTGGoldfish share is a reference snapshot. The date range applies to the MTGDecks win rates.</p>' : "")+table+expand+
     '<div class="actions">'+sourceLinks+button("Add snapshot","snapshot")+'</div>'+savedSnapshots+'</section>'+
     (metaWindow===2 && metaFormat!=="7-Point Highlander" ? challengePlacements(metaFormat) : "")+
     window.MagicDashTools.recentTournaments(metaFormat)+'</div>';
 }
 const resultLabels = {W:"Win",L:"Loss",D:"Draw"};
-function playEventCard(event) {
+function playEventCard(event, expanded) {
   const upcoming = isUpcoming(event,Date.now());
   const badge = event.competing && upcoming ? '<span class="tag competing">Competing</span>' :
     '<span class="tag alt">'+(upcoming?"History":"Past event")+'</span>';
   const date = dateOnlyText(eventDate(event));
   const dateRange = event.through && event.through!==eventDate(event) ? " – "+dateOnlyText(event.through) : "";
   const record = statsFor(event.matches);
-  return '<article class="panel play-event'+(event.competing && upcoming?" is-competing":"")+'"><div class="heading"><div>'+
+  const card = '<article class="panel play-event'+(event.competing && upcoming?" is-competing":"")+'"><div class="heading"><div>'+
     '<div class="tags">'+badge+'<span class="tag">'+escapeText(event.format)+'</span></div><h3 id="play-event-'+escapeText(encodeURIComponent(event.id))+'" tabindex="-1">'+escapeText(event.title)+'</h3>'+
     '<p class="small muted">'+escapeText(date+dateRange+" · "+event.venue)+'</p></div><div class="actions">'+
     button("+ Log match","play-match",encodeURIComponent(event.id),true)+(event.competing && upcoming ? button("Stop competing","compete",event.id):"")+'</div></div>'+
@@ -1067,21 +1059,26 @@ function playEventCard(event) {
           '<p class="small muted play-match-meta">'+escapeText(detail)+'</p></div>'+button("Edit match","play-match",encodeURIComponent(event.id)+"/"+match.id)+'</div>'+
           (match.notes?'<p class="small play-match-notes">'+escapeText(match.notes)+'</p>':"")+'</li>';
       }).join("")+'</ul>':'<p class="small muted">Use Log match after each round to build your event record.</p>')+'</article>';
+  if (upcoming) return card;
+  return '<details class="past-event" data-event-id="'+escapeText(event.id)+'"'+(expanded.has(event.id)?" open":"")+'><summary>'+escapeText(event.title)+' <span class="small muted">'+escapeText(date)+'</span></summary>'+card+'</details>';
 }
 function showPlay() {
+  const expanded = new Set([...app.querySelectorAll(".past-event[open]")].map(item=>item.dataset.eventId));
   const now = Date.now();
   const upcoming = event => event.competing && isUpcoming(event,now);
   const entries = [...state.playEvents].sort((a,b)=>Number(upcoming(b))-Number(upcoming(a)) ||
     (upcoming(a)?eventDate(a).localeCompare(eventDate(b)):eventDate(b).localeCompare(eventDate(a))));
   app.innerHTML=showPersonalDecks()+'<div class="heading" id="play-events-heading"><h2>Your events</h2>'+
     '<a class="button" href="#events">Find events</a></div><p class="small" id="compete-status"></p>'+
-    '<section class="stack play-events" aria-label="Your events">'+(accountPlaceholder("your Play events") || entries.map(playEventCard).join("") ||
+    '<section class="stack play-events" aria-label="Your events">'+(accountPlaceholder("your Play events") || entries.map(event=>playEventCard(event,expanded)).join("") ||
     '<div class="empty"><h3>No events in Play yet</h3><p class="muted">Choose Add to Play on an upcoming event to start logging matches here.</p></div>')+'</section>';
 }
 const playRoute = () => location.hash==="#play" || location.hash.startsWith("#play/");
 const pageHeading = () => document.querySelector("#hero-title");
 function focusRoute() {
   const eventHeading = location.hash.startsWith("#play/") && document.getElementById("play-event-"+location.hash.slice(6));
+  const disclosure = eventHeading && eventHeading.closest(".past-event");
+  if (disclosure) disclosure.open = true;
   (eventHeading || pageHeading()).focus();
 }
 function actionControl(action,id) {
@@ -1362,7 +1359,6 @@ app.addEventListener("click",event=>{
   const control = event.target.closest("button[data-action]");
   if (!control) return;
   const {action,id} = control.dataset;
-  if (action === "estimate-drive" || action === "estimate-home-drive") { void estimateDrives(action==="estimate-home-drive"); return; }
   if (action === "refresh-events" || action === "refresh-meta") { void refreshPageData(action.slice(8)); return; }
   if (action === "account") { document.querySelector("#account-button").click(); return; }
   const reasons = {deck:"save a deck", match:"log a match", "play-match":"log a match",
@@ -1391,12 +1387,6 @@ app.addEventListener("click",event=>{
 app.addEventListener("toggle",event=>{
   if (event.target.id==="play-decks" && event.target.isConnected) playDecksOpen = event.target.open;
 },true);
-app.addEventListener("input",event=>{
-  if (event.target.id!=="meta-window") return;
-  const label = metaWindows[Number(event.target.value)];
-  event.target.setAttribute("aria-valuetext",label);
-  document.getElementById("meta-window-value").textContent = label;
-});
 app.addEventListener("change",event=>{
   const {id,value} = event.target;
   if (["event-region","event-category","event-format"].includes(id)) {
