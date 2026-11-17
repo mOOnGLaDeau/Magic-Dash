@@ -238,7 +238,7 @@ a:hover,button:hover {filter:none}
   padding:16px;
 }
 .event-title,.event-details,.event-actions {min-width:0;overflow-wrap:anywhere}
-.event-title .tags {margin-bottom:6px}
+.event-title .tags {margin:6px 0 0}
 .event-details {display:grid;gap:3px}
 .event .event-details p {margin:0}
 .event-venue {font-weight:700}
@@ -249,10 +249,24 @@ a:hover,button:hover {filter:none}
   .event {grid-template-columns:54px minmax(0,1.1fr) minmax(0,1fr);gap:10px 14px}
   .event-actions {grid-column:2/-1;justify-content:flex-start}
 }
-@media (max-width:600px) {
-  .event {grid-template-columns:48px minmax(0,1fr);padding:12px;gap:10px}
-  .event-details,.event-actions {grid-column:1/-1}
-  .event-details {border-top:1px solid var(--line);padding-top:8px}
+@media (max-width:760px) {
+  .event {grid-template-columns:46px minmax(0,1fr);gap:8px 12px;padding:12px}
+  .event .date {grid-column:1;grid-row:1 / 3}
+  .event-title,.event-details {grid-column:2}
+  .event-title h3 {font-size:17px;line-height:1.3;text-wrap:pretty}
+  .event-title .tags {margin:5px 0 0}
+  .event-details {gap:4px}
+  .event-actions {
+    grid-column:1/-1;
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    align-items:stretch;
+    padding-top:9px;
+    border-top:1px solid var(--line);
+  }
+  .event-actions .button {justify-content:center;padding-inline:6px}
+  .event-actions > :only-child,.event-actions > .competing {grid-column:1/-1}
+  .event-actions > .competing {justify-self:start}
 }
 .date {background:var(--accent-surface);border-color:#776443;border-radius:9px;padding:9px 3px}
 .date strong,.stat strong,table,.shop-list time {font-variant-numeric:tabular-nums}
@@ -286,12 +300,17 @@ dialog h2 {margin-bottom:4px}
   .hero,.hero.hero-events {margin-top:16px;padding-bottom:11px}
   .hero h1,.hero.hero-events h1 {font-size:clamp(32px,8vw,40px)}
   .scan-panel summary {min-height:44px}
-  .event-results-heading {align-items:start;flex-wrap:wrap}
-  .event-results-heading .actions {gap:5px}
+  .event-results-heading {align-items:start;flex-direction:column;gap:10px}
+  .event-results-heading .actions {width:100%;align-items:start;gap:8px}
+  .event-results-heading .refresh-control {flex:1;min-width:0}
+  .event-filters {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:9px}
+  .trip-tools {gap:4px 8px}
+}
+@media (max-width:480px) {
+  .event-filters {grid-template-columns:repeat(2,minmax(0,1fr))}
+  .event-filters label:nth-child(3) {grid-column:1/-1}
 }
 @media (max-width:390px) {
-  .event-filters {display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
-  .event-filters label:last-child {grid-column:1/-1}
   .deck-sections .panel .heading {flex-wrap:wrap}
   #shop-results .shop-list {grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -642,7 +661,7 @@ function eventCard(item) {
     ? dayText(first)+" · "+zonedTime(first)+(item.end ? " – "+(isoLocal(first)===isoLocal(item.end) ? "" : dayText(item.end)+" · ")+zonedTime(item.end) : "")
     : dateOnlyText(item.date)+last+" · Event-local dates · Time TBA";
   return '<article class="event'+(competing?" is-competing":"")+'"><div class="date" aria-hidden="true"><span class="num">'+dateFormat(first,{month:"short",...(item.start ? {} : {timeZone:"UTC"})})+'</span><strong>'+dateFormat(first,{day:"numeric",...(item.start ? {} : {timeZone:"UTC"})})+'</strong></div>'+
-    '<div class="event-title"><div class="tags"><span class="tag">'+escapeText(item.format)+'</span><span class="tag alt">'+escapeText(item.kind)+'</span></div><h3>'+escapeText(item.title)+'</h3></div>'+
+    '<div class="event-title"><h3>'+escapeText(item.title)+'</h3><div class="tags"><span class="tag">'+escapeText(item.format)+'</span><span class="tag alt">'+escapeText(item.kind)+'</span></div></div>'+
     '<div class="event-details"><p class="event-venue">'+escapeText(item.venue)+'</p>'+trip+
     '<p class="muted small">'+escapeText(when)+'</p>'+
     (item.note ? '<p class="muted small">'+escapeText(item.note)+'</p>' : "")+
@@ -803,7 +822,7 @@ function showEvents() {
       '<p class="muted small">'+(homeCountry()==="AU" ? "Store feed covers Brisbane." : "Browse nearby stores and events in the Wizards locator.")+'</p></div>' : "")+
     (scope==="local" && listings.some(venueAddress) ? '<div class="trip-tools"><button class="button" type="button" data-action="estimate-drive" data-id="" aria-disabled="'+tripBusy+'" aria-describedby="trip-info">Estimate drive from my location</button>'+
       (homeAddress.country==="AU" && homeAddress.city ? '<button class="button" type="button" data-action="estimate-home-drive" data-id="" aria-disabled="'+tripBusy+'" aria-describedby="trip-info">Estimate from saved area</button>' : "")+
-      '<p class="small muted" id="trip-info">Uses your approximate device location or saved suburb and postcode for routing with <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS</a> for routing · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Fix the map</a></p><p class="small muted" id="trip-status" role="status">'+escapeText(tripStatus)+'</p></div>' : "")+
+      '<p class="small muted" id="trip-info">Uses your approximate device location or saved suburb and postcode with <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS</a> for routing · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Fix the map</a></p><p class="small muted" id="trip-status" role="status">'+escapeText(tripStatus)+'</p></div>' : "")+
     '<p class="small" id="compete-status" role="status"></p>'+
     (listings.map(eventCard).join("") || '<div class="empty"><h3>No verified upcoming '+resultType+(filter==="All formats"?"":escapeText(filter)+" ")+'listings</h3><p class="muted">Try another filter or add an event from an organiser.</p></div>')+'</section>';
 }
