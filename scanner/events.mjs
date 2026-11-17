@@ -1,4 +1,6 @@
 import {read} from "./catalog.mjs";
+import {scanGoodGames} from "./goodgames.mjs";
+import {scanLocator} from "./locator.mjs";
 import {plain} from "./feed.mjs";
 
 const vault = "https://vaultgames.com.au";
@@ -97,5 +99,14 @@ export async function refreshEvents(data, now=new Date()) {
       saved.set(event.id,event);
     }
   } catch (error) { issues.push("Playmantis events: "+failureReason(error)); }
-  await data.put("events",JSON.stringify({checkedAt,partial:issues.length>0,issues,events:[...saved.values()]}));
+  try { await scanLocator(saved,day); }
+  catch (error) { issues.push("Wizards Event Locator: "+failureReason(error)); }
+  try { await scanGoodGames(saved,day); }
+  catch (error) { issues.push("Good Games calendar: "+failureReason(error)); }
+  const distinct = new Map();
+  for (const event of saved.values()) {
+    const key = [Date.parse(event.start),event.venue.trim().toLowerCase(),event.format,event.title.trim().toLowerCase()].join("|");
+    if (!distinct.has(key) || event.id.startsWith("wizards-")) distinct.set(key,event);
+  }
+  await data.put("events",JSON.stringify({checkedAt,partial:issues.length>0,issues,events:[...distinct.values()]}));
 }

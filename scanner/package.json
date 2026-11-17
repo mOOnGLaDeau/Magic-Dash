@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "dependencies": {
+    "turbo-stream": "2.4.1"
+  }
+}
