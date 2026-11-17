@@ -34,6 +34,31 @@ export function parseVaultEvent(html, handle, discoveredOn) {
     start:dayKey+"T"+time+":00+10:00",discoveredOn,url:vault+"/products/"+handle};
 }
 
+function playmantisEvents(html, day) {
+  const events = [];
+  for (const match of html.matchAll(/<a\b[^>]*\bhref=["'](?:https:\/\/playmantis\.com\.au)?(?:\/collections\/events)?\/products\/([a-z0-9-]+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const [,handle,body] = match;
+    const name = handle.replaceAll("-"," ");
+    if (!cedh.test(name) && !commander.test(name)) continue;
+    const label = plain(body);
+    const date = /\b(Sun|Mon|Tue|Wed|Thu|Fri|Sat),?\s+(\w{3})\s+(\d{1,2})\b.*?\b(\d{1,2}):(\d{2})\s*([AP]M)\b/i.exec(label);
+    if (!date) continue;
+    const month = months.findIndex(m=>m.startsWith(date[2].toLowerCase()));
+    if (month<0) continue;
+    const year = Number(day.slice(0,4));
+    const dates = [year,year+1].map(y=>new Date(Date.UTC(y,month,+date[3])));
+    const start = dates.find(d=>d.toISOString().slice(0,10)>=day && d.getUTCDate()===+date[3] && d.toUTCString().startsWith(date[1]));
+    if (!start) continue;
+    const time = String(+date[4]%12+(date[6].toLowerCase()==="pm"?12:0)).padStart(2,"0")+":"+date[5];
+    const format = cedh.test(name) ? "cEDH" : "Commander";
+    const title = label.slice(0,date.index).replace(/^(?:Commander|cEDH)\s+/i,"").trim() || name;
+    events.push({id:"playmantis-"+handle,scope:"local",format,category:/\b(social|casual)\b/i.test(name) ? "Casual" : "Competitive",
+      kind:/league/i.test(name) ? "League" : "Store event",title,venue:"Playmantis, Annerley",start:start.toISOString().slice(0,10)+"T"+time+":00+10:00",
+      discoveredOn:day,url:"https://playmantis.com.au/products/"+handle});
+  }
+  return events;
+}
+
 function failureReason(error) {
   if (error?.name==="TimeoutError") return "request timed out";
   return error?.message || "request failed";
@@ -65,5 +90,12 @@ export async function refreshEvents(data, now=new Date()) {
       if (event && event.start.slice(0,10)>=day) saved.set(event.id,event);
     } catch (error) { issues.push("/products/"+handle+": "+failureReason(error)); }
   }
+  try {
+    const html = await (await read("https://playmantis.com.au/collections/events")).text();
+    for (const event of playmantisEvents(html,day)) {
+      event.discoveredOn = saved.get(event.id)?.discoveredOn || day;
+      saved.set(event.id,event);
+    }
+  } catch (error) { issues.push("Playmantis events: "+failureReason(error)); }
   await data.put("events",JSON.stringify({checkedAt,partial:issues.length>0,issues,events:[...saved.values()]}));
 }
