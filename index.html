@@ -729,12 +729,12 @@ async function refreshPageData(kind, initial = false) {
   status.message = initial ? "" : kind==="events" ? "Checking the latest event scan…" : "Checking the latest metagame feed…";
   updateControls();
   try {
-    let checkedAt, partial;
+    let checkedAt, partial, issues;
     if (kind==="events") {
       const scan = await window.MagicDashTools.loadEvents();
       if (!Array.isArray(scan.events) || !Number.isFinite(Date.parse(scan.checkedAt))) throw Error();
       liveEvents = readScheduledEvents(scan);
-      ({checkedAt,partial} = scan);
+      ({checkedAt,partial,issues} = scan);
     } else {
       if (!await window.MagicDashTools.loadFeed()) throw Error();
       const feed = window.MagicDashTools.feed;
@@ -742,7 +742,7 @@ async function refreshPageData(kind, initial = false) {
       partial = Object.values(feed.status || {}).includes("previous data kept");
     }
     Object.assign(status,{checkedAt,partial});
-    status.message = partial ? "Some source results could not be refreshed." : initial ? "" : "Latest feed loaded.";
+    status.message = partial ? (kind==="events" && Array.isArray(issues) && issues.length ? "Partial scan. "+issues.join(" · ") : "Some source results could not be refreshed.") : initial ? "" : "Latest feed loaded.";
     status.busy = false;
     const control = app.querySelector('[data-action="refresh-'+kind+'"]');
     if (control && (!initial || !editor.open)) {

@@ -34,6 +34,11 @@ export function parseVaultEvent(html, handle, discoveredOn) {
     start:dayKey+"T"+time+":00+10:00",discoveredOn,url:vault+"/products/"+handle};
 }
 
+function failureReason(error) {
+  if (error?.name==="TimeoutError") return "request timed out";
+  return error?.message || "request failed";
+}
+
 export async function refreshEvents(data, now=new Date()) {
   const previous = await data.get("events","json");
   const day = new Date(now.getTime()+10*3600000).toISOString().slice(0,10);
@@ -41,20 +46,24 @@ export async function refreshEvents(data, now=new Date()) {
   const saved = new Map((previous?.events || []).filter(event=>event.start.slice(0,10)>=day).map(event=>[event.id,event]));
   const pages = await Promise.allSettled(collections.map(async path=>(await read(vault+path)).text()));
   const handles = new Set();
-  for (const page of pages) {
-    if (page.status!=="fulfilled") continue;
+  const issues = [];
+  for (const [index,page] of pages.entries()) {
+    if (page.status!=="fulfilled") {
+      issues.push(collections[index]+": "+failureReason(page.reason));
+      continue;
+    }
     for (const [,handle] of page.value.matchAll(/href=["'][^"'<>]*?\/products\/([a-z0-9-]+)(?=[?"'#])/gi)) {
       const label = handle.replaceAll("-"," ");
       if (cedh.test(label) || commander.test(label) || competitive.test(label) && /\b(?:standard|modern|legacy|7 point highlander)\b/i.test(label)) handles.add(handle);
     }
   }
-  let partial = pages.some(page=>page.status==="rejected") || handles.size>8;
+  if (handles.size>8) issues.push("Checked 8 of "+handles.size+" candidate listings (scan limit).");
   for (const handle of [...handles].slice(0,8)) {
     try {
       const html = await (await read(vault+"/products/"+handle)).text();
       const event = parseVaultEvent(html,handle,saved.get("scan-vault-"+handle)?.discoveredOn || day);
       if (event && event.start.slice(0,10)>=day) saved.set(event.id,event);
-    } catch { partial = true; }
+    } catch (error) { issues.push("/products/"+handle+": "+failureReason(error)); }
   }
-  await data.put("events",JSON.stringify({checkedAt,partial,events:[...saved.values()]}));
+  await data.put("events",JSON.stringify({checkedAt,partial:issues.length>0,issues,events:[...saved.values()]}));
 }
