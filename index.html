@@ -365,6 +365,7 @@ dialog h2 {margin-bottom:4px}
 <script src="account-config.js"></script>
 <script>
 const formats = ["Standard","Modern","Legacy","7-Point Highlander"];
+const eventFormat = value => /^(?:edh|commander)$/i.test(value) ? "Commander" : value;
 const eventFormats = [...formats,"Commander","cEDH"];
 const wizards = "https://magic.wizards.com/en/news/announcements/magiccon-heads-to-japan-europe-and-the-us-in-2027";
 const twitch = "https://www.twitch.tv/magic";
@@ -682,11 +683,11 @@ function readScheduledEvents(scan) {
     for (const event of scan.events) {
       if (event.scope!=="local" || !eventCategories.includes(event.category) ||
           typeof event.id!=="string" || !event.id || typeof event.title!=="string" || !event.title ||
-          typeof event.venue!=="string" || !event.venue || !eventFormats.includes(event.format) ||
+          typeof event.venue!=="string" || !event.venue || !eventFormats.includes(eventFormat(event.format)) ||
           !dateKey(event.discoveredOn) || !safeUrl(event.url) ||
           !(event.start ? Number.isFinite(Date.parse(event.start)) : dateKey(event.date))) continue;
       if (event.end && (!event.start || !Number.isFinite(Date.parse(event.end)) || Date.parse(event.end)<Date.parse(event.start))) continue;
-      valid.set(event.id,{...event,through:undefined,scope:"local"});
+      valid.set(event.id,{...event,format:eventFormat(event.format),through:undefined,scope:"local"});
     }
     return [...valid.values()];
   } catch { return []; }
@@ -804,7 +805,7 @@ function showEvents() {
   const listings = eventListings()
     .filter(item=>(scope==="major" ? item.scope==="major" : listingCountry(item)===homeCountry() &&
       (item.scope==="local" || Boolean(homeAddress.country)) && eventCategory(item)===category) &&
-      (filter==="All formats" || item.format===filter) &&
+      (filter==="All formats" || eventFormat(item.format)===filter) &&
       isUpcoming(item,now))
     .sort((a,b)=>(a.start||localDate(a.date)).localeCompare(b.start||localDate(b.date)));
   const filterSelect = (label,id,values,selected) => '<label>'+label+'<select id="'+id+'" aria-controls="event-results">'+options(values,selected)+'</select></label>';
@@ -819,7 +820,10 @@ function showEvents() {
       '<p class="small muted" id="trip-info">Uses your approximate device location with <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS</a> for routing · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Fix the map</a></p><p class="small muted" id="trip-status" role="status">'+escapeText(tripStatus)+'</p></div>' : "")+
     '<p class="small" id="compete-status" role="status"></p>'+
     (scope==="local" && homeCountry()==="AU" ? refreshControls("events","Look for new events") : "")+
-    (listings.map(eventCard).join("") || '<div class="empty"><h3>No verified upcoming '+resultType+(filter==="All formats"?"":escapeText(filter)+" ")+'listings</h3><p class="muted">Try another filter.</p></div>')+'</section>';
+    (listings.map(eventCard).join("") || '<div class="empty"><h3>No verified upcoming '+resultType+(filter==="All formats"?"":escapeText(filter)+" ")+'listings</h3><p class="muted">Try another filter.</p></div>')+
+    (scope==="local" && homeCountry()==="AU" && category==="Casual" && filter==="Commander" ?
+      '<aside class="panel"><h3>Regular Brisbane Commander nights</h3><p class="small muted">Vault lists Monday and Tuesday nights in Brisbane City and Wednesday nights in Clayfield. Check with the store for availability on your date.</p><div class="actions">'+
+      link("https://vaultgames.com.au/pages/mythic-commander-membership-qldbne","Brisbane City details")+link("https://vaultgames.com.au/pages/mythic-commander-membership-qldcly","Clayfield details")+'</div></aside>' : "")+'</section>';
   if (document.getElementById("trip-status") && !tripStatus) void estimateDrives();
 }
 
@@ -1392,7 +1396,11 @@ app.addEventListener("change",event=>{
   if (["event-region","event-category","event-format"].includes(id)) {
     if (id==="event-region") { scope=value==="Major events"?"major":"local"; filter="All formats"; }
     if (id==="event-category") category=value;
-    if (id==="event-format") filter=value;
+    if (id==="event-format") {
+      filter=value;
+      if (filter==="Commander") category="Casual";
+      if (filter==="cEDH") category="Competitive";
+    }
     showEvents();
     placeAccountSync();
     document.getElementById(id).focus();
