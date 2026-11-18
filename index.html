@@ -365,7 +365,13 @@ dialog h2 {margin-bottom:4px}
 <script src="account-config.js"></script>
 <script>
 const formats = ["Standard","Modern","Legacy","7-Point Highlander"];
-const eventFormat = value => /^(?:edh|commander)$/i.test(value) ? "Commander" : value;
+function commanderFormat(text) {
+  const words = text.replaceAll("_"," ").replaceAll("-"," ");
+  if (/\b(?:cedh|competitive\s+(?:commander|edh))\b/i.test(words)) return "cEDH";
+  if (/\b(?:commander|edh)\b/i.test(words)) return "Commander";
+  return "";
+}
+const eventFormat = (value,title) => commanderFormat([title,value].join(" ")) || value;
 const eventFormats = [...formats,"Commander","cEDH"];
 const wizards = "https://magic.wizards.com/en/news/announcements/magiccon-heads-to-japan-europe-and-the-us-in-2027";
 const twitch = "https://www.twitch.tv/magic";
@@ -687,11 +693,11 @@ function readScheduledEvents(scan) {
     for (const event of scan.events) {
       if (event.scope!=="local" || !eventCategories.includes(event.category) ||
           typeof event.id!=="string" || !event.id || typeof event.title!=="string" || !event.title ||
-          typeof event.venue!=="string" || !event.venue || !eventFormats.includes(eventFormat(event.format)) ||
+          typeof event.venue!=="string" || !event.venue || !eventFormats.includes(eventFormat(event.format,event.title)) ||
           !dateKey(event.discoveredOn) || !safeUrl(event.url) ||
           !(event.start ? Number.isFinite(Date.parse(event.start)) : dateKey(event.date))) continue;
       if (event.end && (!event.start || !Number.isFinite(Date.parse(event.end)) || Date.parse(event.end)<Date.parse(event.start))) continue;
-      valid.set(event.id,{...event,format:eventFormat(event.format),through:undefined,scope:"local"});
+      valid.set(event.id,{...event,format:eventFormat(event.format,event.title),through:undefined,scope:"local"});
     }
     return [...valid.values()];
   } catch { return []; }
@@ -808,15 +814,15 @@ function showEvents() {
   showRecentNews(now);
   const listings = eventListings()
     .filter(item=>(scope==="major" ? item.scope==="major" : listingCountry(item)===homeCountry() &&
-      (item.scope==="local" || Boolean(homeAddress.country)) && eventCategory(item)===category) &&
-      (filter==="All formats" || eventFormat(item.format)===filter) &&
+      (item.scope==="local" || Boolean(homeAddress.country)) && (category==="All play types" || eventCategory(item)===category)) &&
+      (filter==="All formats" || eventFormat(item.format,item.title)===filter) &&
       isUpcoming(item,now))
     .sort((a,b)=>(a.start||localDate(a.date)).localeCompare(b.start||localDate(b.date)));
   const filterSelect = (label,id,values,selected) => '<label>'+label+'<select id="'+id+'" aria-controls="event-results">'+options(values,selected)+'</select></label>';
   const filters = filterSelect("Region","event-region",[homeRegionLabel(),"Major events"],scope==="local"?homeRegionLabel():"Major events")+
-    (scope==="local"?filterSelect("Play type","event-category",eventCategories,category):"")+
+    (scope==="local"?filterSelect("Play type","event-category",["All play types",...eventCategories],category):"")+
     filterSelect("Format","event-format",["All formats",...eventFormats],filter);
-  const resultType = scope==="local" ? category.toLowerCase()+" " : "";
+  const resultType = scope==="local" && category!=="All play types" ? category.toLowerCase()+" " : "";
   app.innerHTML = '<div class="event-filters" role="group" aria-label="Event filters">'+filters+'</div>'+
     '<section class="stack" id="event-results" aria-labelledby="event-results-title">'+
     '<div class="event-results-heading"><div><h2 id="event-results-title">Upcoming events</h2><p class="small muted">'+listings.length+' '+(listings.length===1?"event":"events")+'</p></div></div>'+
@@ -825,7 +831,7 @@ function showEvents() {
     '<p class="small" id="compete-status" role="status"></p>'+
     (scope==="local" && homeCountry()==="AU" ? refreshControls("events","Look for new events") : "")+
     (listings.map(eventCard).join("") || '<div class="empty"><h3>No verified upcoming '+resultType+(filter==="All formats"?"":escapeText(filter)+" ")+'listings</h3><p class="muted">Try another filter.</p></div>')+
-    (scope==="local" && homeCountry()==="AU" && category==="Casual" && filter==="Commander" ?
+    (scope==="local" && homeCountry()==="AU" && category!=="Competitive" && filter==="Commander" ?
       '<aside class="panel"><h3>Regular Brisbane Commander nights</h3><p class="small muted">Vault lists Monday and Tuesday nights in Brisbane City and Wednesday nights in Clayfield. Check with the store for availability on your date.</p><div class="actions">'+
       link("https://vaultgames.com.au/pages/mythic-commander-membership-qldbne","Brisbane City details")+link("https://vaultgames.com.au/pages/mythic-commander-membership-qldcly","Clayfield details")+'</div></aside>' : "")+'</section>';
   if (document.getElementById("trip-status") && !tripStatus) void estimateDrives();
@@ -1402,8 +1408,7 @@ app.addEventListener("change",event=>{
     if (id==="event-category") category=value;
     if (id==="event-format") {
       filter=value;
-      if (filter==="Commander") category="Casual";
-      if (filter==="cEDH") category="Competitive";
+      if (filter==="Commander" || filter==="cEDH") category="All play types";
     }
     showEvents();
     placeAccountSync();

@@ -3,10 +3,17 @@ import {read} from "./catalog.mjs";
 const locator = "https://locator.wizards.com";
 const supported = ["Standard","Modern","Legacy","7-Point Highlander","Commander"];
 
+export function commanderFormat(text) {
+  const words = text.replaceAll("_"," ").replaceAll("-"," ");
+  if (/\b(?:cedh|competitive\s+(?:commander|edh))\b/i.test(words)) return "cEDH";
+  if (/\b(?:commander|edh)\b/i.test(words)) return "Commander";
+  return "";
+}
+
 export function locatorEvent(raw, day) {
   const title = raw.title || "";
   const label = raw.eventFormat?.name || "";
-  const format = /\b(?:cedh|competitive (?:commander|edh))\b/i.test(title+" "+label) ? "cEDH" :
+  const format = commanderFormat(title+" "+label) ||
     supported.find(name=>name.toLowerCase()===label.toLowerCase()) ||
     supported.find(name=>new RegExp("\\b"+name.replaceAll("-","[- ]")+"\\b","i").test(title)) ||
     (/\bedh\b/i.test(title+" "+label) ? "Commander" : null);

@@ -1,24 +1,21 @@
 import {read} from "./catalog.mjs";
 import {scanGoodGames} from "./goodgames.mjs";
-import {scanLocator} from "./locator.mjs";
+import {commanderFormat,scanLocator} from "./locator.mjs";
 import {plain} from "./feed.mjs";
 
 const vault = "https://vaultgames.com.au";
 const collections = ["/collections/brisbane-events", "/collections/events"];
 const competitive = /\b(?:rcq|regional championship qualifier|store championship|win[- ]a[- ]box)\b/i;
-const cedh = /\b(?:cedh|competitive (?:commander|edh))\b/i;
-const commander = /\b(?:commander|edh)\b/i;
 const formats = /\b(?:standard|modern|legacy|7[- ]point highlander)\b/gi;
 const months = "january february march april may june july august september october november december".split(" ");
 
 export function parseVaultEvent(html, handle, discoveredOn) {
   const title = plain(html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || "");
   const formatNames = new Set(Array.from(title.matchAll(formats), ([format])=>format.toLowerCase().replace("7 point","7-point")));
-  const isCedh = cedh.test(title);
-  if (isCedh) formatNames.add("cedh");
-  else if (commander.test(title)) formatNames.add("commander");
+  const namedFormat = commanderFormat(title);
+  const isCedh = namedFormat==="cEDH";
   const isCompetitive = isCedh || competitive.test(title);
-  if ((!isCompetitive && !formatNames.has("commander")) || formatNames.size!==1 || /\b(sealed|draft|limited)\b/i.test(title)) return null;
+  if (!namedFormat && (!isCompetitive || formatNames.size!==1 || /\b(sealed|draft|limited)\b/i.test(title))) return null;
   const text = plain(html);
   const venue = text.match(/Event Location:\s*(Vault Games (?:Brisbane City|Clayfield))\b/i)?.[1];
   const date = text.match(/Date\s*&\s*Time of Event:\s*(\d{1,2}):(\d{2})\s*([ap]m)\s+(\d{1,2})\s+([a-z]+)\s+(\d{4})\b/i);
@@ -30,7 +27,7 @@ export function parseVaultEvent(html, handle, discoveredOn) {
   const dayKey = year+"-"+two(monthIndex+1)+"-"+two(day);
   if (new Date(Date.UTC(+year,monthIndex,+day)).toISOString().slice(0,10)!==dayKey) return null;
   const time = two(+hour%12+(meridiem.toLowerCase()==="pm"?12:0))+":"+minute;
-  const format = isCedh ? "cEDH" : [...formatNames][0].replace(/\b[a-z]/g,letter=>letter.toUpperCase());
+  const format = namedFormat || [...formatNames][0].replace(/\b[a-z]/g,letter=>letter.toUpperCase());
   const kind = /store championship/i.test(title) ? "Store Championship" : /win[- ]a[- ]box/i.test(title) ? "Win-a-box" : /rcq|regional championship qualifier/i.test(title) ? "RCQ" : isCedh ? "cEDH" : "Commander night";
   return {id:"scan-vault-"+handle,scope:"local",category:isCompetitive ? "Competitive" : "Casual",kind,title,venue,format,
     start:dayKey+"T"+time+":00+10:00",discoveredOn,url:vault+"/products/"+handle};
@@ -41,8 +38,10 @@ function playmantisEvents(html, day) {
   for (const match of html.matchAll(/<a\b[^>]*\bhref=["'](?:https:\/\/playmantis\.com\.au)?(?:\/collections\/events)?\/products\/([a-z0-9-]+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
     const [,handle,body] = match;
     const name = handle.replaceAll("-"," ");
-    if (!cedh.test(name) && !commander.test(name)) continue;
+
     const label = plain(body);
+    const format = commanderFormat(label+" "+name);
+    if (!format) continue;
     const date = /\b(Sun|Mon|Tue|Wed|Thu|Fri|Sat),?\s+(\w{3})\s+(\d{1,2})\b.*?\b(\d{1,2}):(\d{2})\s*([AP]M)\b/i.exec(label);
     if (!date) continue;
     const month = months.findIndex(m=>m.startsWith(date[2].toLowerCase()));
@@ -52,7 +51,7 @@ function playmantisEvents(html, day) {
     const start = dates.find(d=>d.toISOString().slice(0,10)>=day && d.getUTCDate()===+date[3] && d.toUTCString().startsWith(date[1]));
     if (!start) continue;
     const time = String(+date[4]%12+(date[6].toLowerCase()==="pm"?12:0)).padStart(2,"0")+":"+date[5];
-    const format = cedh.test(name) ? "cEDH" : "Commander";
+
     const title = label.slice(0,date.index).replace(/^(?:Commander|cEDH)\s+/i,"").trim() || name;
     events.push({id:"playmantis-"+handle,scope:"local",format,category:/\b(social|casual)\b/i.test(name) ? "Casual" : "Competitive",
       kind:/league/i.test(name) ? "League" : "Store event",title,venue:"Playmantis, Annerley",start:start.toISOString().slice(0,10)+"T"+time+":00+10:00",
@@ -81,7 +80,7 @@ export async function refreshEvents(data, now=new Date()) {
     }
     for (const [,handle] of page.value.matchAll(/href=["'][^"'<>]*?\/products\/([a-z0-9-]+)(?=[?"'#])/gi)) {
       const label = handle.replaceAll("-"," ");
-      if (cedh.test(label) || commander.test(label) || competitive.test(label) && /\b(?:standard|modern|legacy|7 point highlander)\b/i.test(label)) handles.add(handle);
+      if (commanderFormat(label) || competitive.test(label) && /\b(?:standard|modern|legacy|7 point highlander)\b/i.test(label)) handles.add(handle);
     }
   }
   if (handles.size>8) issues.push("Checked 8 of "+handles.size+" candidate listings (scan limit).");
